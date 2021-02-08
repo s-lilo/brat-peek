@@ -1,0 +1,9 @@
+*.pyc
+*.pyo
+*~
+venv/
+dummy_data/
+dummy_data2/
+temp/
+__pycache__/
+.idea/
