@@ -8,9 +8,8 @@ import csv
 
 def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
     """
-    Create tsv file with the corpus' text annotations with codes column.
+    Create tsv file with the corpus' text annotations.
     Feed tags that you don't want to include with the to_ignore argument.
-    Can retrieve suggestions from tsv file using a reference file.
     :param corpus: AnnCorpus
     :param output_path: str
     :param to_ignore: list of str
@@ -47,7 +46,7 @@ def print_tsv_for_norm(corpus, output_path, reference_tsv, to_ignore):
         writer = csv.writer(f_out, delimiter='\t')
         writer.writerow(["name", "path", "tag", "span", "text", "code"])
         for doc in corpus.docs:
-            for ent in doc.entities:
+            for ent in doc.anns['entities']:
                 if ent.tag not in to_ignore:
                     found = False
                     if reference_tsv:
