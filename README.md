@@ -24,6 +24,8 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
     print(doc.name, doc.path)
     # Print entities in document
     print(doc.anns['entities'])
+    # Print relations
+    print(doc.anns['relations']
     # Counter with text annotations
     print(corpus.text_freq)
     print(corpus.text_freq['Organism'].most_common(5))
@@ -34,3 +36,6 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
     # Calculate IAA and print .tsv file with disagreements
     corpus2 = AnnCorpus('dummy_data2/')
     peek.iaa.show_iaa([corpus, corpus2], ['filename', 'label', 'offset'], ['Organism'], tsv=True)
+    # Get IAA for all categories in the corpus
+    peek.iaa.show_iaa([corpus, corpus2], ['filename', 'label', 'offset'], list(set([ent for ent in corpus.count['entities']])))
+    

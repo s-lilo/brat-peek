@@ -31,7 +31,8 @@ def show_iaa(corpus_list, rel_variables, rel_labels, tsv=False):
             for ann in doc.anns['entities']:
                 # TODO: CODES
                 if ann.tag in rel_labels:
-                    info.append([corpus.name, doc.name, ann.name, ann.tag, ann.text, ann.span])
+                    span = " ". join([str(n) for tup in ann.span for n in tup])
+                    info.append([corpus.name, doc.name, ann.name, ann.tag, ann.text, span])
         df = pd.DataFrame(info, columns=['annotator', 'filename', 'mark',
                                          'label', 'offset', 'span'])
         list_df.append(df)
