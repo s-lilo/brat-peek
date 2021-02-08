@@ -20,7 +20,7 @@ def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
         writer = csv.writer(f_out, delimiter='\t')
         writer.writerow(["name", "path", "tag", "span", "text"])
         for doc in corpus.docs:
-            for ent in doc.entities:
+            for ent in doc.anns['entities']:
                 if ent.tag not in to_ignore:
                     writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text])
 
