@@ -71,7 +71,7 @@ def separate_tags(corpus, folder_a, folder_b):
     for doc in corpus.docs:
         f_name = doc.name
         with open(folder_a + f_name + '.ann', 'w') as f_a:
-            with open(folder_b + f_name + '.ann', 'w') as f_b:
+            with open(folder_b + '/' + f_name + '.ann', 'w') as f_b:
                 for ann in doc.anns['entities']:
                     axis_a = ann_structure.Entity(ann.name, ann.tag.split('-')[0], ann.span, ann.text)
                     f_a.write(str(axis_a) + '\n')
