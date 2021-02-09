@@ -25,8 +25,9 @@ def show_iaa(corpus_list, rel_variables, rel_labels, tsv=False):
 
     ##### GET ANN INFORMATION #####
     list_df = []
-    info = []
+
     for corpus in corpus_list:
+        info = []
         for doc in corpus.docs:
             for ann in doc.anns['entities']:
                 # TODO: CODES
@@ -55,7 +56,7 @@ def show_iaa(corpus_list, rel_variables, rel_labels, tsv=False):
     (iaa_all_vs_all, iaa_pairwise,
      iaa_by_label, count_labels) = computations(list_df, rel_variables,
                                                 annotator_names, by_label=True)
-
+    print(count_labels)
     ###### PRINT ######
     print('_________________________________________________________________')
     print('\nIAA taking into account {}'.format(rel_variables))
