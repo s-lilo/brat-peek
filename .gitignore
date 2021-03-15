@@ -1,9 +1,0 @@
-.gitignore
-*.pyc
-*.pyo
-*~
-venv/
-dummy_data*/
-temp/
-__pycache__/
-.idea/
