@@ -14,7 +14,7 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
         # ...or get one by its name
         doc = corpus.get_doc_by_name('PMID-1590827')
         # Or maybe just get those you're interested in
-        docs = [doc for doc in corpus.docs if 'Organism' in doc.anns['entities']]
+        docs = [doc for doc in corpus.docs if 'Organism' in doc.count['entities']]
         # Print document name and path
         print(doc.name, doc.path)
         # See the individual annotations in a document
