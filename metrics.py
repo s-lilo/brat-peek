@@ -2,6 +2,7 @@
 Calculate inter-annotator agreement (IAA) of two corpora.
 
 Adaptation of Antonio Miranda's IAA computation script (https://github.com/TeMU-BSC/iaa-computation).
+TODO: INCLUDE PRECISION, RECALL, F-score
 """
 from collections import Counter
 
@@ -9,7 +10,7 @@ import os
 import pandas as pd
 
 
-# This is the main function
+# This is the main IAA function
 def show_iaa(corpus_list, rel_variables, rel_labels, tsv=False):
     """
     Compute IAA from several annotators (all vs all and detailed) and for different labels (all together and per label).

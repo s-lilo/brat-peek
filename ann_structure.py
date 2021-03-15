@@ -21,12 +21,12 @@ class AnnCorpus:
     Recursive by default. (TODO: Optional?)
     # TODO: iterable?
     '''
-    def __init__(self, path):
+    def __init__(self, path, txt=False):
         # Meta
         self.path = path
         self.name = os.path.split(path.rstrip('/'))[-1]  # corpus name is same as folder's
         # Content
-        content = self._construct_corpus()
+        content = self._construct_corpus(txt)
         self.docs = content
         # Stats
         count = self._count_corpus()
@@ -35,26 +35,35 @@ class AnnCorpus:
         self.text_freq = text_freq
 
     # Corpus construction
-    def _construct_corpus(self):
+    def _construct_corpus(self, with_text=False):
         '''
         Get all .ann files in input folder and return a list of AnnDocuments.
         :return: list
         '''
         corpus = []
         for f in glob.iglob(os.path.join(self.path, '**/*.ann'), recursive=True):
-            corpus.append(AnnDocument(f))
-        
+            corpus.append(AnnDocument(f, txt=with_text))
+
         return corpus
 
     # Corpus management
     # Retrieve collection of file from regex
-    def get_collections(self, collections_set):
+    def create_collections(self, collections_set):
         '''
-        A corpus may have different kind of texts, create collections to gather them.
-        Use regex to find match inside folder/file name?
+        A corpus may have different types of texts or multiple batches. Look up pattern in filepath to group them.
+        TODO: **Use regex to find match inside folder/file name?**
         :return:
         '''
-        pass
+        counter = []
+        for collection in collections_set:
+            d = 0
+            for doc in self.docs:
+                if collection in doc.path.split('/')[:-1]:
+                    doc.collection = collection
+                    d += 1
+            counter.append(d)
+
+        print('Collections assigned:\n{}'.format('\n'.join([str(z) for z in zip(collections_set, counter)])))
 
     # Count
     def _count_corpus(self):
@@ -88,13 +97,19 @@ class AnnCorpus:
         return count
 
     # Document retrieval
-    def get_doc(self, f_name):
-        '''
+    def get_doc_by_name(self, f_name, collection=''):
+        """
         Returns a given doc in the corpus.
         TODO: allow for multiple docs?
         :return:
-        '''
-        return [doc for doc in self.docs if doc.name == f_name][0]
+        """
+        try:
+            if collection:
+                return [doc for doc in self.docs if doc.name == f_name and doc.collection == collection]
+            else:
+                return [doc for doc in self.docs if doc.name == f_name]
+        except IndexError:
+            print('File not in corpus')
 
     def get_random_doc(self):
         """
@@ -111,31 +126,41 @@ class AnnCorpus:
         return all_text
 
     def get_empty_files(self):
-        '''
+        """
         Return which files have no annotations.
-        A file should be empty if it has no TextBound annotations. (is this wrong?)
-        '''
+        A file should be empty if it has no TextBound annotations.
+        """
         return [doc.path for doc in self.docs if not doc.anns['entities']]
 
 
 # Document object (compilation of lines of different tags)
 class AnnDocument:
-    '''
+    """
     A document is basically a container of smaller annotation atoms.
 
     The input of object instances should always be a .ann file!
-    '''
-    def __init__(self, path):
+    """
+    def __init__(self, path, txt=False):
         # Meta
         self.path = path
         self.name = path.split('/')[-1][:-4]  # .ann ending not included in name
-        # self.collection = ""  # Not implemented yet
+        self.collection = ''
         # Content
         content = self._construct_document()
         self.anns = content
+        # Text files  ** This is experimental, might take a while to load big corpora **
+        if txt:
+            try:
+                with open(self.path[:-3] + 'txt', 'r') as doc_txt:
+                    self.txt = [sent.rstrip('\n') if sent != '\n' else sent for sent in doc_txt.readlines()]
+            except FileNotFoundError:
+                print('Text file for <{}> not found!'.format(self.path))
+                self.txt = ""
+        else:
+            self.txt = ""
         # Stats
         count = self._count_tags()
-        self.count = count
+        self.count = count  # ISSUE: For some reason, first document in corpus has corpus' count instead of doc
         text_freq = self._text_frequency()
         self.text_freq = text_freq
 
@@ -146,13 +171,13 @@ class AnnDocument:
     # Line understanding
     @staticmethod
     def _parse_line(line):
-        '''
+        """
         Lines look like this:
         T2	Location 10 23	South America
         Separate each of its parts and return its corresponding object.
         :param line: str
         :return: annotation object
-        '''
+        """
         line = line.rstrip()
         fields = line.split('\t')
         # Check type of annotation line
@@ -184,10 +209,10 @@ class AnnDocument:
 
     # Object building
     def _construct_document(self):
-        '''
+        """
         Open .ann file, read all lines and construct the document.
         :return: dict
-        '''
+        """
         # Create dict with all of the file's content
         # TODO: implement normalizations and placeholders
         doc = {'entities': [], 'relations': [], 'events': [], 'attributes': [], 'notes': []}
@@ -223,10 +248,10 @@ class AnnDocument:
 
     # Count
     def _count_tags(self):
-        '''
+        """
         Count all tags separated by type and return them in a dictionary.
         :return: dict
-        '''
+        """
         tags_count = {}
         for k in self.anns.keys():
             tags = Counter()
@@ -246,10 +271,10 @@ class AnnDocument:
 
     # Text
     def _text_frequency(self):
-        '''
+        """
         Get all text annotations and count them.
         :return: dict
-        '''
+        """
         count = {}
         for ann in self.anns['entities']:
             if ann.tag not in count.keys():
@@ -264,6 +289,44 @@ class AnnDocument:
     # Co-occurrence
     # Document wise?
     # Span wise?
+
+
+class AnnSentence(AnnDocument):
+    """
+    A sentence is a special kind of AnnDocument that is fed metadata, annotations and text manually.
+    """
+    def __init__(self):
+        # Meta
+        self.path = ""
+        self.name = ""
+        self.source = ""
+        # Content
+        self.anns = {'entities': [], 'relations': [], 'events': [], 'attributes': [], 'notes': []}
+        # Text files  ** This is experimental, might take a while to load big corpora **
+        self.txt = ""
+        # Stats
+        self.count = self._count_tags()
+        self.text_freq = self._text_frequency()
+
+    def update_stats(self):
+        """
+        Stats items should be updated after adding new ones
+        """
+        self.count = self._count_tags()
+        self.text_freq = self._text_frequency()
+
+    def from_entity(self, ent):
+        """
+        Copy an entity's interactions (relations, events, attributes, ... pointing to it)
+        """
+        if ent.rels:
+            self.anns['relations'].extend(ent.rels)
+        if ent.events:
+            self.anns['events'].extend(ent.events)
+        if ent.attr:
+            self.anns['attributes'].extend(ent.attr)
+        if ent.notes:
+            self.anns['notes'].extend(ent.notes)
 
 
 # Annotation line atoms
@@ -382,8 +445,4 @@ class Note:
 
 
 class Placeholder:
-    pass
-
-
-if __name__ == '__main__':
     pass

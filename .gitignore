@@ -2,8 +2,7 @@
 *.pyo
 *~
 venv/
-dummy_data/
-dummy_data2/
+dummy_data*/
 temp/
 __pycache__/
 .idea/
