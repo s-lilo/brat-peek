@@ -75,7 +75,8 @@ class AnnCorpus:
         for doc in self.docs:
             for k in doc.count.keys():
                 if k not in count.keys():
-                    count[k] = doc.count[k]
+                    count[k] = Counter()
+                    count[k] += doc.count[k]
                 else:
                     count[k] += doc.count[k]
 
@@ -159,10 +160,8 @@ class AnnDocument:
         else:
             self.txt = ""
         # Stats
-        count = self._count_tags()
-        self.count = count  # ISSUE: For some reason, first document in corpus has corpus' count instead of doc
-        text_freq = self._text_frequency()
-        self.text_freq = text_freq
+        self.count = self._count_tags()
+        self.text_freq = self._text_frequency()
 
     def __str__(self):
         # TODO: verbose and non-verbose? (don't print things that = 0)
