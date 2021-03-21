@@ -4,6 +4,7 @@ Read, write, save, load.
 import ann_structure
 
 import csv
+import pickle
 
 
 # .ANN
@@ -46,11 +47,14 @@ def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
     # TODO: Only prints entities
     with open('{}/{}.tsv'.format(output_path, corpus.name), 'w') as f_out:
         writer = csv.writer(f_out, delimiter='\t')
-        writer.writerow(["name", "path", "tag", "span", "text"])
+        writer.writerow(["name", "path", "tag", "span", "text", "note"])
         for doc in corpus.docs:
             for ent in doc.anns['entities']:
                 if ent.tag not in to_ignore:
-                    writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text])
+                    if ent.notes:
+                        writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text, ent.notes[0].note])
+                    else:
+                        writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text])
 
     print('Written tsv file to {}/{}.tsv'.format(output_path, corpus.name))
 
@@ -111,6 +115,24 @@ def print_tsv_for_norm(corpus, output_path, reference_tsv, to_ignore):
                         writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text])
 
     print('Written tsv file to {}/{}.tsv'.format(output_path, corpus.name))
+
+
+# PICKLE SAVE AND LOADING
+def save_corpus(corpus, output_path: str):
+    """
+    Stores the information in an AnnCorpus object for later use.
+    """
+    with open(output_path + '/' + corpus.name + '.pckl', 'wb') as f_out:
+        pickle.dump(corpus, f_out)
+        print('Corpus stored at {}'.format(output_path + '/' + corpus.name + '.pckl'))
+
+
+def load_corpus(input_path):
+    """
+    Loads pickled AnnCorpora
+    """
+    with open(input_path, 'rb') as f_in:
+        return pickle.load(f_in)
 
 
 # OTHERS

@@ -58,4 +58,9 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
         # Create a new document only with sentences that have organisms annotated.
         new_doc = sent2doc([sent for sent in sentences if any(ann.tag == 'Organism' for ann in frase_med.anns['entities'])])
 
-    
+* Save corpora as pickle objects to load them later (useful for big corpora).
+
+        # Save
+        peek.rwsl.save_corpus(corpus, 'temp/')
+        # Load
+        corpus = peek.rwsl.load_corpus('temp/dummy_data.pckl')
