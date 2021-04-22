@@ -106,9 +106,9 @@ class AnnCorpus:
         """
         try:
             if collection:
-                return [doc for doc in self.docs if doc.name == f_name and doc.collection == collection]
+                return [doc for doc in self.docs if doc.name == f_name and doc.collection == collection][0]
             else:
-                return [doc for doc in self.docs if doc.name == f_name]
+                return [doc for doc in self.docs if doc.name == f_name][0]
         except IndexError:
             print('File not in corpus')
 
@@ -156,9 +156,9 @@ class AnnDocument:
                     self.txt = [sent.rstrip('\n') if sent != '\n' else sent for sent in doc_txt.readlines()]
             except FileNotFoundError:
                 print('Text file for <{}> not found!'.format(self.path))
-                self.txt = ""
+                self.txt = []
         else:
-            self.txt = ""
+            self.txt = []
         # Stats
         self.count = self._count_tags()
         self.text_freq = self._text_frequency()
@@ -203,7 +203,10 @@ class AnnDocument:
             return Attribute(name=fields[0], tag=att[0], arguments=att[1:])
         elif line.startswith('#'):  # Notes
             tag, ann_id = fields[1].split(' ')
-            return Note(name=fields[0], tag=tag, ann_id=ann_id, note=fields[2])
+            if len(fields) > 2:
+                return Note(name=fields[0], tag=tag, ann_id=ann_id, note=fields[2])
+            else:
+                return Note(name=fields[0], tag=tag, ann_id=ann_id, note="")
         # TODO: read normalizations and placeholders
 
     # Object building
@@ -302,7 +305,7 @@ class AnnSentence(AnnDocument):
         # Content
         self.anns = {'entities': [], 'relations': [], 'events': [], 'attributes': [], 'notes': []}
         # Text files  ** This is experimental, might take a while to load big corpora **
-        self.txt = ""
+        self.txt = []
         # Stats
         self.count = self._count_tags()
         self.text_freq = self._text_frequency()
