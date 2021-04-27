@@ -19,7 +19,60 @@ def write_ann_file(doc, output_path):
 
     print('Written ann file to {}/{}.ann'.format(output_path, doc.name))
 
-# TODO: JOIN ANN FILES
+
+# TODO: JOIN NON-TEXTBOUND
+def join_ann_files(doc_list, output_path):
+    """
+    Create a new .ann file in output_path with multiple annotations combined.
+    WIP, I usually use it like this:
+    corpus = ann_structure.AnnCorpus(in_path, txt=True)
+    corpus.create_collections(['X', 'Y', 'Z'])
+    for doc in [doc for doc in corpus.docs if doc.collection == 'X']:
+        Y = corpus.get_doc_by_name(doc.name, 'Y')
+        Z = corpus.get_doc_by_name(doc.name, 'Z')
+        join_ann_files([doc, Y, Z], out_path)
+        write_txt_file(doc, out_path)
+    """
+    new_doc = ann_structure.AnnSentence()
+    current_t_id = 1
+    for doc in doc_list:
+        for ent in doc.anns['entities']:
+            new_ent = ann_structure.Entity(name='T{}'.format(current_t_id), tag=ent.tag, span=ent.span,
+                                           text=ent.text)
+            new_doc.anns['entities'].append(new_ent)
+            current_t_id += 1
+
+    with open('{}/{}.ann'.format(output_path, doc_list[0].name), 'w') as f_out:
+        for k in new_doc.anns:
+            for ann in new_doc.anns[k]:
+                f_out.write(str(ann)+'\n')
+
+    print('Written ann file to {}/{}.ann'.format(output_path, doc_list[0].name))
+
+
+def add_default_attribute(corpus, attribute_tuple, output_path):
+    """
+    The option to use default attributes in brat only applies to new annotations (as expected).
+    This function adds a default attribute to existing .ann files for new layers of annotation.
+    Attribute must be a tuple with two elements: tag and arguments
+    """
+    for doc in corpus.docs:
+        with open('{}/{}.ann'.format(output_path, doc.name), 'w') as f_out:
+            for k in doc.anns:
+                for ann in doc.anns[k]:
+                    f_out.write(str(ann)+'\n')
+                    tag = attribute_tuple[0]
+                    if len(attribute_tuple) > 1:
+                        arguments = [ann.name, attribute_tuple[1]]
+                    else:
+                        arguments = [ann.name]
+                    f_out.write(str(ann_structure.Attribute(name='A{}'.format(ann.name[1:]),
+                                                            tag=tag,
+                                                            arguments=arguments))
+                                + '\n')
+
+        print('Written ann file to {}/{}.ann'.format(output_path, doc.name))
+
 
 # .TXT
 def write_txt_file(doc, output_path):
@@ -28,7 +81,11 @@ def write_txt_file(doc, output_path):
     """
     if doc.txt:
         with open('{}/{}.txt'.format(output_path, doc.name), 'w') as f_out:
-            f_out.write(doc.txt)
+            for sent in doc.txt:
+                if sent != '\n':
+                    f_out.write(sent + '\n')
+                else:
+                    f_out.write('\n')
             print('Written txt file to {}/{}.txt'.format(output_path, doc.name))
     else:
         print('Could not find text for doc {}'.format(doc.name))
@@ -129,7 +186,7 @@ def save_corpus(corpus, output_path: str):
 
 def load_corpus(input_path):
     """
-    Loads pickled AnnCorpora
+    Loads pickled AnnCorpora.
     """
     with open(input_path, 'rb') as f_in:
         return pickle.load(f_in)
@@ -139,7 +196,7 @@ def load_corpus(input_path):
 def separate_tags(corpus, folder_a, folder_b):
     """
     I created this function originally to separate the two axis of annotation in the MEDDOPROF corpus,
-    which has tags like these: PACIENTE_PROFESION, SANITARIO_PROFESION, ...
+    which has tags like these: PACIENTE-PROFESION, SANITARIO-PROFESION, ...
     Output two new versions of each annotated file, one only with PACIENTE/SANITARIO/... tags
     and another with PROFESION...
     """
