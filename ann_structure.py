@@ -220,7 +220,12 @@ class AnnDocument:
         doc = {'entities': [], 'relations': [], 'events': [], 'attributes': [], 'notes': []}
         with open(self.path, 'r', encoding='utf-8') as f_in:
             for line in f_in:
-                ann = self._parse_line(line)
+                try:
+                    ann = self._parse_line(line)
+                except IndexError:
+                    print('File {} seems to be faulty, please check and load the corpus again. Ignoring for now...'.format(self.path))
+                    continue
+
                 if isinstance(ann, Entity):
                     doc['entities'].append(ann)
                 elif isinstance(ann, Relation):
@@ -231,6 +236,8 @@ class AnnDocument:
                     doc['attributes'].append(ann)
                 elif isinstance(ann, Note):
                     doc['notes'].append(ann)
+                else:
+                    print('Could not recognize the following line in file {}, please check:\n{}\n'.format(self.path, line))
 
         # Get interactions between entities and other types
         for ent in doc['entities']:
