@@ -23,6 +23,7 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
 * See the annotations in a corpus at a glance with stats and graphs.
     
         print('Corpus stats:', corpus.count)
+        print('Entity labels found in corpus: ', corpus.text_labels)
         print('Document 42:', corpus.docs[42])
         # Create a plot
         peek.stats.plot_tags(corpus)
@@ -47,16 +48,16 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
         corpus2 = AnnCorpus('dummy_data2/')
         peek.metrics.show_iaa([corpus, corpus2], ['filename', 'label', 'offset'], ['Organism'], tsv=True)
         # Get IAA for all categories in the corpus
-        peek.metrics.show_iaa([corpus, corpus2], ['filename', 'label', 'offset'], list(set([ent for ent in corpus.count['entities']])))
+        peek.metrics.show_iaa([corpus, corpus2], ['filename', 'label', 'offset'], corpus.text_labels)
 
 * Extract sentences from documents to create customizable annotation files.
         
         # Set txt to True when creating an AnnCorpus object to also read .txt files
         corpus = peek.AnnCorpus('dummy_data/', txt=True)
         # Separate document into individual sentences, adjusting annotation spans in the way.
-        sentences = [doc2sent(doc) for doc in corpus.docs]
+        sentences = [peek.txt.doc2sent(doc) for doc in corpus.docs]
         # Create a new document only with sentences that have organisms annotated.
-        new_doc = sent2doc([sent for sent in sentences if any(ann.tag == 'Organism' for ann in frase_med.anns['entities'])])
+        new_doc = peek.txt.sent2doc([sent for sent in sentences if any(ann.tag == 'Organism' for ann in frase_med.anns['entities'])])
 
 * Save corpora as pickle objects to load them later (useful for big corpora).
 

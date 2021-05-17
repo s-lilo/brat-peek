@@ -33,6 +33,12 @@ class AnnCorpus:
         self.count = count
         text_freq = self._text_frequency_corpus()
         self.text_freq = text_freq
+        # Labels found in the corpus
+        self.text_labels = list(set([ent for ent in self.count['entities']]))
+        self.rel_labels = list(set([ent for ent in self.count['relations']]))
+        self.event_labels = list(set([ent for ent in self.count['events']]))
+        self.attr_labels = list(set([ent for ent in self.count['attributes']]))
+
 
     # Corpus construction
     def _construct_corpus(self, with_text=False):
