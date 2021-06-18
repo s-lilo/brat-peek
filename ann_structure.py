@@ -39,7 +39,6 @@ class AnnCorpus:
         self.event_labels = list(set([ent for ent in self.count['events']]))
         self.attr_labels = list(set([ent for ent in self.count['attributes']]))
 
-
     # Corpus construction
     def _construct_corpus(self, with_text=False):
         '''
@@ -254,6 +253,10 @@ class AnnDocument:
                     ent.rels.append(rel)
                 elif rel.arg2.split(':')[-1] == ent.name:
                     ent.rels.append(rel)
+            # Build attributes
+            for att in doc['attributes']:
+                if att.arguments[0] == ent.name:
+                    ent.attr.append(att)
             # Build notes
             for note in doc['notes']:
                 if note.ann_id == ent.name:

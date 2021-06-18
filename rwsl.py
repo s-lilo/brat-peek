@@ -34,12 +34,20 @@ def join_ann_files(doc_list, output_path):
         write_txt_file(doc, out_path)
     """
     new_doc = ann_structure.AnnSentence()
+    # Textbound
     current_t_id = 1
+    # Attributes
+    current_a_id = 1
     for doc in doc_list:
         for ent in doc.anns['entities']:
             new_ent = ann_structure.Entity(name='T{}'.format(current_t_id), tag=ent.tag, span=ent.span,
                                            text=ent.text)
             new_doc.anns['entities'].append(new_ent)
+            if ent.attr:
+                for att in ent.attr:
+                    new_ent = ann_structure.Attribute(name='A{}'.format(current_a_id), tag=att.tag, arguments=['T{}'.format(current_t_id)])
+                    new_doc.anns['attributes'].append(new_ent)
+                    current_a_id += 1
             current_t_id += 1
 
     with open('{}/{}.ann'.format(output_path, doc_list[0].name), 'w') as f_out:
@@ -136,7 +144,7 @@ def print_tsv_from_text_freq(corpus, output_path, to_ignore=[]):
     print('Written tsv file to {}/{}_text_freq.tsv'.format(output_path, corpus.name))
 
 
-def print_tsv_for_norm(corpus, output_path, reference_tsv, to_ignore):
+def print_tsv_for_norm(corpus, output_path, reference_tsv, to_ignore=[]):
     """
     Create tsv file with the corpus' text annotations with codes column for normalization.
     Can retrieve suggestions from tsv file using a reference file.
