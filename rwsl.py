@@ -38,17 +38,30 @@ def join_ann_files(doc_list, output_path):
     current_t_id = 1
     # Attributes
     current_a_id = 1
+    # Relations
+    current_r_id = 1
     for doc in doc_list:
+        # Entities ID old to new mapping
+        old_to_new_t_id = {}
         for ent in doc.anns['entities']:
             new_ent = ann_structure.Entity(name='T{}'.format(current_t_id), tag=ent.tag, span=ent.span,
                                            text=ent.text)
             new_doc.anns['entities'].append(new_ent)
+            old_to_new_t_id[ent.name] = 'T{}'.format(current_t_id)
             if ent.attr:
                 for att in ent.attr:
                     new_ent = ann_structure.Attribute(name='A{}'.format(current_a_id), tag=att.tag, arguments=['T{}'.format(current_t_id)])
                     new_doc.anns['attributes'].append(new_ent)
                     current_a_id += 1
             current_t_id += 1
+
+        if doc.anns['relations']:
+            for rel in doc.anns['relations']:
+                new_rel = ann_structure.Relation(name='R{}'.format(current_r_id), tag=rel.tag,
+                                                 arg1='{}:{}'.format(rel.arg1.split(':')[0], old_to_new_t_id[rel.arg1.split(':')[1]]),
+                                                 arg2='{}:{}'.format(rel.arg2.split(':')[0], old_to_new_t_id[rel.arg2.split(':')[1]]))
+                new_doc.anns['relations'].append(new_rel)
+                current_r_id += 1
 
     with open('{}/{}.ann'.format(output_path, doc_list[0].name), 'w') as f_out:
         for k in new_doc.anns:
