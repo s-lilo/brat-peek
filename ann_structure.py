@@ -21,12 +21,15 @@ class AnnCorpus:
     Recursive by default. (TODO: Optional?)
     # TODO: iterable?
     '''
-    def __init__(self, path, txt=False):
+    def __init__(self, path, txt=False, from_list=False):
         # Meta
         self.path = path
         self.name = os.path.split(path.rstrip('/'))[-1]  # corpus name is same as folder's
         # Content
-        content = self._construct_corpus(txt)
+        if from_list:
+            content = from_list
+        else:
+            content = self._construct_corpus(txt)
         self.docs = content
         # Stats
         count = self._count_corpus()
