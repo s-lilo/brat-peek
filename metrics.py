@@ -91,13 +91,15 @@ def show_iaa(corpus_list, rel_variables, rel_labels, tsv=False):
     print('\n')
 
 
-def show_fscore(gs, pred, rel_labels):
+def show_fscore(gs, pred, rel_labels, verbose=False):
     """
     Compute F-score by comparing a GS brat-annotated corpus and a set of predictions also in brat format.
     :param gs: Gold Standard as AnnCorpus object.
     :param pred: Predictions as AnnCorpus object.
     :param rel_labels: list of labels to consider for F-score.
+    :param verbose: whether to show each individual document's score
     # TODO: Print tsv
+    # TODO: Show scores for each individual label
     """
 
     ##### GET ANN INFORMATION #####
@@ -203,26 +205,27 @@ def show_fscore(gs, pred, rel_labels):
 
     # return P_per_cc, P, R_per_cc, R, F1_per_cc, F1
     ###### Show results ######
-    print('\n-----------------------------------------------------')
-    print('Clinical case name\t\t\tPrecision')
-    print('-----------------------------------------------------')
-    for index, val in P_per_cc.items():
-        print(str(index) + '\t\t' + str(round(val, 3)))
+    if verbose:
+        print('\n-----------------------------------------------------')
+        print('Clinical case name\t\t\tPrecision')
         print('-----------------------------------------------------')
+        for index, val in P_per_cc.items():
+            print(str(index) + '\t\t' + str(round(val, 3)))
+            print('-----------------------------------------------------')
 
-    print('\n-----------------------------------------------------')
-    print('Clinical case name\t\t\tRecall')
-    print('-----------------------------------------------------')
-    for index, val in R_per_cc.items():
-        print(str(index) + '\t\t' + str(round(val, 3)))
+        print('\n-----------------------------------------------------')
+        print('Clinical case name\t\t\tRecall')
         print('-----------------------------------------------------')
+        for index, val in R_per_cc.items():
+            print(str(index) + '\t\t' + str(round(val, 3)))
+            print('-----------------------------------------------------')
 
-    print('\n-----------------------------------------------------')
-    print('Clinical case name\t\t\tF-score')
-    print('-----------------------------------------------------')
-    for index, val in F1_per_cc.items():
-        print(str(index) + '\t\t' + str(round(val, 3)))
+        print('\n-----------------------------------------------------')
+        print('Clinical case name\t\t\tF-score')
         print('-----------------------------------------------------')
+        for index, val in F1_per_cc.items():
+            print(str(index) + '\t\t' + str(round(val, 3)))
+            print('-----------------------------------------------------')
 
     print('\n_____________________________________________________')
     print('Micro-average metrics')
