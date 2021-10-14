@@ -42,13 +42,14 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
         # Create .tsv with codes column for normalization with a code reference file.
         peek.rwsl.print_tsv_for_norm(corpus, 'output_folder/', 'reference.tsv', to_ignore=['Organism'])
 
-* Calculate IAA of different corpora.
+* Calculate metrics for different corpora.
   
-        # Calculate IAA and print .tsv file with disagreements
-        corpus2 = AnnCorpus('dummy_data2/')
-        peek.metrics.show_iaa([corpus, corpus2], ['filename', 'label', 'offset'], ['Organism'], tsv=True)
-        # Get IAA for all categories in the corpus
-        peek.metrics.show_iaa([corpus, corpus2], ['filename', 'label', 'offset'], corpus.text_labels)
+        # Calculate IAA and print .tsv file with disagreements [code based on https://github.com/TeMU-BSC/iaa-computation]
+        peek.metrics.show_iaa([corpus1, corpus2], ['filename', 'label', 'offset'], ['Organism'], tsv=True)
+        # You can use specific labels, as shown above, or use the text_labels attribute to use all the labels in the corpus at once.
+        peek.metrics.show_iaa([corpus1, corpus2], ['filename', 'label', 'offset'], corpus.text_labels)
+        # Calculate precision, recall and F-score between a Gold Standard and a set of predictions [code based on https://github.com/TeMU-BSC/meddoprof-evaluation-library/]
+        peek.metrics.show_fscore(gs, pred, gs.text_labels)
 
 * Extract sentences from documents to create customizable annotation files.
         
