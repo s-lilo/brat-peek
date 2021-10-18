@@ -24,9 +24,11 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
     
         print('Corpus stats:', corpus.count)
         print('Entity labels found in corpus: ', corpus.text_labels)
-        print('Document 42:', corpus.docs[42])
+        print('Document 42 annotations:', corpus.docs[41].anns)
         # Create a plot
         peek.stats.plot_tags(corpus)
+        # Generate .tsv with statistics
+        peek.stats.generate_corpus_stats_tsv(corpus, include_txt=True)
   
 * Check out the most common annotated text spans.
   
