@@ -126,9 +126,13 @@ def show_fscore(gs, pred, rel_labels, verbose=False):
                                             'label', 'offset', 'span'])
 
     if pred.shape[0] == 0:
-        raise Exception('There are not parsed predicted annotations')
+        print('There are no parsed predicted annotations, setting all metrics to 0')
+        P = 0
+        R = 0
+        F = 0
+        return P, R, F
     elif gs.shape[0] == 0:
-        raise Exception('There are not parsed Gold Standard annotations')
+        raise Exception('There are no parsed Gold Standard annotations')
 
     # Drop duplicates
     pred = pred.drop_duplicates(['filename', 'label', 'offset']).copy()
@@ -196,7 +200,7 @@ def show_fscore(gs, pred, rel_labels, verbose=False):
     if (P + R) == 0:
         F1 = 0
         warnings.warn('Global F1 score automatically set to zero to avoid division by zero')
-        return P_per_cc, P, R_per_cc, R, F1_per_cc, F1
+        return P, R, F1
     F1 = (2 * P * R) / (P + R)
 
     if (any([F1, P, R]) > 1) | any(F1_per_cc > 1) | any(P_per_cc > 1) | any(R_per_cc > 1):
@@ -234,6 +238,7 @@ def show_fscore(gs, pred, rel_labels, verbose=False):
     print('\nMicro-average recall = {}\n'.format(round(R, 3)))
     print('\nMicro-average F-score = {}\n'.format(round(F1, 3)))
 
+    return round(P, 3), round(R, 3), round(F1, 3)
 
 # These are all helper functions
 def output_annotation_tables(list_df, outpaths):
