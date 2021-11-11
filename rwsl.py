@@ -21,6 +21,7 @@ def write_ann_file(doc, output_path):
 
 
 # TODO: JOIN NON-TEXTBOUND
+# TODO: AUTOMATIZE JOINING CORPORA
 def join_ann_files(doc_list, output_path):
     """
     Create a new .ann file in output_path with multiple annotations combined.
@@ -36,6 +37,8 @@ def join_ann_files(doc_list, output_path):
     new_doc = ann_structure.AnnSentence()
     # Textbound
     current_t_id = 1
+    # Notes
+    current_n_id = 1
     # Attributes
     current_a_id = 1
     # Relations
@@ -48,6 +51,11 @@ def join_ann_files(doc_list, output_path):
                                            text=ent.text)
             new_doc.anns['entities'].append(new_ent)
             old_to_new_t_id[ent.name] = 'T{}'.format(current_t_id)
+            if ent.notes:
+                for note in ent.notes:
+                    new_ent = ann_structure.Note(name='#{}'.format(current_a_id), tag=note.tag, ann_id='T{}'.format(current_t_id), note=note.note)
+                    new_doc.anns['notes'].append(new_ent)
+                    current_n_id += 1
             if ent.attr:
                 for att in ent.attr:
                     new_ent = ann_structure.Attribute(name='A{}'.format(current_a_id), tag=att.tag, arguments=['T{}'.format(current_t_id)])
@@ -79,18 +87,17 @@ def add_default_attribute(corpus, attribute_tuple, output_path):
     """
     for doc in corpus.docs:
         with open('{}/{}.ann'.format(output_path, doc.name), 'w') as f_out:
-            for k in doc.anns:
-                for ann in doc.anns[k]:
-                    f_out.write(str(ann)+'\n')
-                    tag = attribute_tuple[0]
-                    if len(attribute_tuple) > 1:
-                        arguments = [ann.name, attribute_tuple[1]]
-                    else:
-                        arguments = [ann.name]
-                    f_out.write(str(ann_structure.Attribute(name='A{}'.format(ann.name[1:]),
-                                                            tag=tag,
-                                                            arguments=arguments))
-                                + '\n')
+            for ann in doc.anns["entities"]:
+                f_out.write(str(ann)+'\n')
+                tag = attribute_tuple[0]
+                if len(attribute_tuple) > 1:
+                    arguments = [ann.name, attribute_tuple[1]]
+                else:
+                    arguments = [ann.name]
+                f_out.write(str(ann_structure.Attribute(name='A{}'.format(ann.name[1:]),
+                                                        tag=tag,
+                                                        arguments=arguments))
+                            + '\n')
 
         print('Written ann file to {}/{}.ann'.format(output_path, doc.name))
 
@@ -137,22 +144,29 @@ def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
     print('Written tsv file to {}/{}.tsv'.format(output_path, corpus.name))
 
 
-def print_tsv_from_text_freq(corpus, output_path, to_ignore=[]):
+def print_tsv_from_text_freq(corpus, output_path, lower=False, to_ignore=[]):
     """
     Create tsv file with unique text annotations and their frequency.
     Feed tags that you don't want to include with the to_ignore argument.
     :param corpus: AnnCorpus
     :param output_path: str
+    :param lower: whether to use the lowercased text_freq or not
     :param to_ignore: list of str
     :return: writes tsv
     """
     with open('{}/{}_text_freq.tsv'.format(output_path, corpus.name), 'w') as f_out:
         writer = csv.writer(f_out, delimiter='\t')
         writer.writerow(["text", "frequency"])  # TODO: Add list of files column
-        for cat in corpus.text_freq:
-            if cat not in to_ignore:
-                for txt in corpus.text_freq[cat]:
-                    writer.writerow([txt, corpus.text_freq[cat][txt]])
+        if lower:
+            for cat in corpus.text_freq_lower:
+                if cat not in to_ignore:
+                    for txt in corpus.text_freq_lower[cat]:
+                        writer.writerow([txt, corpus.text_freq_lower[cat][txt]])
+        else:
+            for cat in corpus.text_freq:
+                if cat not in to_ignore:
+                    for txt in corpus.text_freq[cat]:
+                        writer.writerow([txt, corpus.text_freq[cat][txt]])
 
     print('Written tsv file to {}/{}_text_freq.tsv'.format(output_path, corpus.name))
 

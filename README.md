@@ -34,13 +34,15 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
   
         print(corpus.text_freq)
         print(corpus.text_freq['Organism'].most_common(5))
+        # [NEW 11/11] Also in lowercase (TODO: add more normalization options)
+        print(corpus.text_freq_lower)
 
 * Print a corpus's content to a .tsv file.
   
         # Create .tsv file from corpus (to_ignore is an optional argument)
         peek.rwsl.print_tsv_from_corpus(corpus, 'output_folder/', to_ignore=['Organism'])
         # Create .tsv with text frequencies
-        peek.rwsl.print_tsv_from_text_freq(corpus, 'output_folder/', to_ignore=['Organism'])
+        peek.rwsl.print_tsv_from_text_freq(corpus, 'output_folder/', to_ignore=['Organism'], lower=False)
         # Create .tsv with codes column for normalization with a code reference file.
         peek.rwsl.print_tsv_for_norm(corpus, 'output_folder/', 'reference.tsv', to_ignore=['Organism'])
 

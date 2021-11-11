@@ -21,6 +21,7 @@ class AnnCorpus:
     Recursive by default. (TODO: Optional?)
     # TODO: iterable?
     '''
+
     def __init__(self, path, txt=False, from_list=False):
         # Meta
         self.path = path
@@ -28,19 +29,22 @@ class AnnCorpus:
         # Content
         if from_list:
             content = from_list
+            # From list usage:
+            # corpus = AnnCorpus(path='', from_list=[list,with,AnnDocs])
         else:
             content = self._construct_corpus(txt)
         self.docs = content
+        self.collections = []
         # Stats
         count = self._count_corpus()
         self.count = count
-        text_freq = self._text_frequency_corpus()
-        self.text_freq = text_freq
+        self.text_freq = self._text_frequency_corpus()
+        self.text_freq_lower = self._text_frequency_corpus(lower=True)
         # Labels found in the corpus
-        self.text_labels = list(set([ent for ent in self.count['entities']]))
-        self.rel_labels = list(set([ent for ent in self.count['relations']]))
-        self.event_labels = list(set([ent for ent in self.count['events']]))
-        self.attr_labels = list(set([ent for ent in self.count['attributes']]))
+        self.text_labels = sorted(list(set([ent for ent in self.count['entities']])))
+        self.rel_labels = sorted(list(set([ent for ent in self.count['relations']])))
+        self.event_labels = sorted(list(set([ent for ent in self.count['events']])))
+        self.attr_labels = sorted(list(set([ent for ent in self.count['attributes']])))
 
     # Corpus construction
     def _construct_corpus(self, with_text=False):
@@ -58,7 +62,8 @@ class AnnCorpus:
     # Retrieve collection of file from regex
     def create_collections(self, collections_set):
         '''
-        A corpus may have different types of texts or multiple batches. Look up pattern in filepath to group them.
+        A corpus may have different types of texts or multiple batches.
+        This function looks for patterns in the documents' path to group them into 'collections'.
         TODO: **Use regex to find match inside folder/file name?**
         :return:
         '''
@@ -66,11 +71,12 @@ class AnnCorpus:
         for collection in collections_set:
             d = 0
             for doc in self.docs:
-                if collection in doc.path.split('/')[:-1]:
+                # if collection in doc.path.split('/')[:-1]:
+                if collection in doc.path:
                     doc.collection = collection
                     d += 1
             counter.append(d)
-
+            self.collections.append(collection)
         print('Collections assigned:\n{}'.format('\n'.join([str(z) for z in zip(collections_set, counter)])))
 
     # Count
@@ -90,18 +96,25 @@ class AnnCorpus:
 
         return count
 
-    def _text_frequency_corpus(self):
+    def _text_frequency_corpus(self, lower=False):
         '''
         Return sum of all text frequency counters.
         :return:
         '''
         count = {}
         for doc in self.docs:
-            for k in doc.text_freq.keys():
-                if k not in count.keys():
-                    count[k] = doc.text_freq[k]
-                else:
-                    count[k] += doc.text_freq[k]
+            if lower:
+                for k in doc.text_freq_lower.keys():
+                    if k not in count.keys():
+                        count[k] = doc.text_freq_lower[k]
+                    else:
+                        count[k] += doc.text_freq_lower[k]
+            else:
+                for k in doc.text_freq.keys():
+                    if k not in count.keys():
+                        count[k] = doc.text_freq[k]
+                    else:
+                        count[k] += doc.text_freq[k]
 
         return count
 
@@ -125,7 +138,7 @@ class AnnCorpus:
         Returns a random document from the corpus!
         :return:
         """
-        return self.docs[random.randint(0, len(self.docs)-1)]
+        return self.docs[random.randint(0, len(self.docs) - 1)]
 
     def get_all_text_from_tag(self, tag):
         all_text = []
@@ -149,6 +162,7 @@ class AnnDocument:
 
     The input of object instances should always be a .ann file!
     """
+
     def __init__(self, path, txt=False):
         # Meta
         self.path = path
@@ -170,8 +184,13 @@ class AnnDocument:
         # Stats
         self.count = self._count_tags()
         self.text_freq = self._text_frequency()
+        self.text_freq_lower = self._text_frequency(lower=True)
 
     def __str__(self):
+        # TODO: verbose and non-verbose? (don't print things that = 0)
+        return self.name
+
+    def __repr__(self):
         # TODO: verbose and non-verbose? (don't print things that = 0)
         return self.name
 
@@ -231,7 +250,9 @@ class AnnDocument:
                 try:
                     ann = self._parse_line(line)
                 except IndexError:
-                    print('File {} seems to be faulty, please check and load the corpus again. Ignoring for now...'.format(self.path))
+                    print(
+                        'File {} seems to be faulty, please check and load the corpus again. Ignoring for now...'.format(
+                            self.path))
                     continue
 
                 if isinstance(ann, Entity):
@@ -245,7 +266,8 @@ class AnnDocument:
                 elif isinstance(ann, Note):
                     doc['notes'].append(ann)
                 else:
-                    print('Could not recognize the following line in file {}, please check:\n{}\n'.format(self.path, line))
+                    print('Could not recognize the following line in file {}, please check:\n{}\n'.format(self.path,
+                                                                                                          line))
 
         # Get interactions between entities and other types
         for ent in doc['entities']:
@@ -291,7 +313,7 @@ class AnnDocument:
         return doc_text
 
     # Text
-    def _text_frequency(self):
+    def _text_frequency(self, lower=False):
         """
         Get all text annotations and count them.
         :return: dict
@@ -300,7 +322,8 @@ class AnnDocument:
         for ann in self.anns['entities']:
             if ann.tag not in count.keys():
                 count[ann.tag] = Counter()
-                count[ann.tag].update([ann.text])
+            if lower:
+                count[ann.tag].update([ann.text.lower()])
             else:
                 count[ann.tag].update([ann.text])
 
@@ -316,6 +339,7 @@ class AnnSentence(AnnDocument):
     """
     A sentence is a special kind of AnnDocument that is fed metadata, annotations and text manually.
     """
+
     def __init__(self):
         # Meta
         self.path = ""
@@ -328,6 +352,7 @@ class AnnSentence(AnnDocument):
         # Stats
         self.count = self._count_tags()
         self.text_freq = self._text_frequency()
+        self.text_freq_lower = self._text_frequency(lower=True)
 
     def update_stats(self):
         """
