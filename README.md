@@ -51,7 +51,7 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
         # Calculate IAA and print .tsv file with disagreements [code based on https://github.com/TeMU-BSC/iaa-computation]
         peek.metrics.show_iaa([corpus1, corpus2], ['filename', 'label', 'offset'], ['Organism'], tsv=True)
         # You can use specific labels, as shown above, or use the text_labels attribute to use all the labels in the corpus at once.
-        peek.metrics.show_iaa([corpus1, corpus2], ['filename', 'label', 'offset'], corpus.text_labels)
+        peek.metrics.show_iaa([corpus1, corpus2], ['filename', 'label', 'offset'], corpus1.text_labels)
         # Calculate precision, recall and F-score between a Gold Standard and a set of predictions [code based on https://github.com/TeMU-BSC/meddoprof-evaluation-library/]
         peek.metrics.show_fscore(gs, pred, gs.text_labels)
 
@@ -70,3 +70,7 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
         peek.rwsl.save_corpus(corpus, 'temp/')
         # Load
         corpus = peek.rwsl.load_corpus('temp/dummy_data.pckl')
+
+## Contact
+Brat Peek is a personal project, which means that currently new features are added as I personally need them. That being said, if you have any questions or suggestions, do not hesitate to contact me at the following address:
+* Salvador Lima: salvador.limalopez@gmail.com
