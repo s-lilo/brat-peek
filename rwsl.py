@@ -93,7 +93,7 @@ def add_default_attribute(corpus, attribute_tuple, output_path):
         new_doc.name = doc.name
 
         if doc.anns["attributes"]:
-            a_id = int(doc.anns["attributes"][-1].name[1:])
+            a_id = len(doc.anns["attributes"]) + 1
         else:
             a_id = 1
 
