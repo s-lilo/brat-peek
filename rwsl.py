@@ -8,6 +8,9 @@ import pickle
 
 
 # .ANN
+import peek
+
+
 def write_ann_file(doc, output_path):
     """
     Create new .ann file in output_path with annotations in doc.
@@ -53,7 +56,7 @@ def join_ann_files(doc_list, output_path):
             old_to_new_t_id[ent.name] = 'T{}'.format(current_t_id)
             if ent.notes:
                 for note in ent.notes:
-                    new_ent = ann_structure.Note(name='#{}'.format(current_a_id), tag=note.tag, ann_id='T{}'.format(current_t_id), note=note.note)
+                    new_ent = ann_structure.Note(name='#{}'.format(current_n_id), tag=note.tag, ann_id='T{}'.format(current_t_id), note=note.note)
                     new_doc.anns['notes'].append(new_ent)
                     current_n_id += 1
             if ent.attr:
@@ -86,19 +89,26 @@ def add_default_attribute(corpus, attribute_tuple, output_path):
     Attribute must be a tuple with two elements: tag and arguments
     """
     for doc in corpus.docs:
-        with open('{}/{}.ann'.format(output_path, doc.name), 'w') as f_out:
-            for ann in doc.anns["entities"]:
-                f_out.write(str(ann)+'\n')
-                tag = attribute_tuple[0]
-                if len(attribute_tuple) > 1:
-                    arguments = [ann.name, attribute_tuple[1]]
-                else:
-                    arguments = [ann.name]
-                f_out.write(str(ann_structure.Attribute(name='A{}'.format(ann.name[1:]),
-                                                        tag=tag,
-                                                        arguments=arguments))
-                            + '\n')
+        new_doc = peek.AnnSentence()
+        new_doc.name = doc.name
 
+        if doc.anns["attributes"]:
+            a_id = int(doc.anns["attributes"][-1].name[1:])
+        else:
+            a_id = 1
+
+        for ann in doc.anns["entities"]:
+            new_doc.copy_entity(ann)
+            new_doc.from_entity(ann)
+            tag = attribute_tuple[0]
+            if len(attribute_tuple) > 1:
+                arguments = [ann.name, attribute_tuple[1]]
+            else:
+                arguments = [ann.name]
+            new_doc.anns["attributes"].append(ann_structure.Attribute(name='A{}'.format(a_id), tag=tag, arguments=arguments))
+            a_id += 1
+
+        write_ann_file(new_doc, output_path)
         print('Written ann file to {}/{}.ann'.format(output_path, doc.name))
 
 
