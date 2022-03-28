@@ -203,9 +203,3 @@ def generate_suggestions_from_tsv(corpus, tsv):
 def generate_tsv_for_suggestions(corpus, outpath):
     pass
 
-
-if __name__ == "__main__":
-    temp = peek.AnnCorpus('/home/salva/Documents/corpora/temporality/anotaciones/escalado/r2/preann', txt=True)
-    tsv = '/home/salva/Documents/corpora/temporality/temporality_suggs.tsv'
-    generate_suggestions_from_tsv(temp, tsv)
-    pass
