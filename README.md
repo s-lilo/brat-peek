@@ -34,7 +34,6 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
   
         print(corpus.text_freq)
         print(corpus.text_freq['Organism'].most_common(5))
-        # [NEW 11/11] Also in lowercase (TODO: add more normalization options)
         print(corpus.text_freq_lower)
 
 * Print a corpus's content to a .tsv file.
@@ -71,6 +70,10 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
         # Load
         corpus = peek.rwsl.load_corpus('temp/dummy_data.pckl')
 
+* Suggest annotations to speed up your annotation process (on the works - mostly untested)
+      
+        peek.txt.generate_suggestions_from_tsv(temp, tsv)
+
 ## Contact
-Brat Peek is a personal project, which means that currently new features are added as I personally need them. That being said, if you have any questions or suggestions, do not hesitate to contact me at the following address:
+Brat Peek is a personal project, which means that currently new features are added as I personally need them. That being said, if you have any questions or suggestions, you can contact me at the following address:
 * Salvador Lima: salvador.limalopez@gmail.com

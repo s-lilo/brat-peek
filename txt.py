@@ -3,7 +3,13 @@ Read corpus text for different purposes.
 """
 import ann_structure
 
-from nltk.tokenize import sent_tokenize
+import csv
+import re
+
+import peek
+
+# This will save us from writing lots of redundant code
+import rwsl
 
 
 def txt_wrapper(f):
@@ -40,7 +46,7 @@ def doc2sent(doc: ann_structure.AnnDocument, tokenizer=''):
         ann_sent = ann_structure.AnnSentence()
         ann_sent.path = doc.path
         ann_sent.name = '{}_sent{}'.format(doc.name, i+1)
-        ann_sent.txt = sent
+        ann_sent.txt.append(sent)
         # Get sentence spans
         if sent != '\n':
             ending_span = current_span + len(sent)
@@ -77,7 +83,7 @@ def sent2doc(sent_list):
     current_span = 0
     for sent in sent_list:
         # Retrieve text
-        ann_sent.txt += sent.txt + '\n'
+        ann_sent.txt += ''.join(sent.txt) + '\n'
         # Adapt entity's id but also rels, events, ....
         for ent in sent.anns['entities']:
             # Set new name for each entity
@@ -112,24 +118,94 @@ def annotation_density(corpus):
     pass
 
 
-if __name__ == "__main__":
-    import rwsl
-    prueba = ann_structure.AnnCorpus('/home/salva/Documents/corpora/clinic/informes_alta_primer_analisis/corrected', txt=True)
+@txt_wrapper
+def generate_suggestion_re(doc, word_dict, flags=[]):
+    """
+    Look up a dict of words or expressions in a document to suggest new textbound annotations.
+    The dict must have the text to look up as key and a tuple inside: class and comment (to be added to brat's comment field, e.g. for codification - can be empty)
 
-    prueba.create_collections(['negation', 'meddocan'])
-    negation_sents = []
-    negation = [doc for doc in prueba.docs if doc.collection == 'negation']
-    meddocan = [doc for doc in prueba.docs if doc.collection == 'meddocan']
-    for doc_neg, doc_med in zip(negation, meddocan):
-        frases_neg = doc2sent(doc_neg)
-        frases_med = doc2sent(doc_med)
-        for frase_neg, frase_med in zip(frases_neg, frases_med):
-            if any([ann.tag == 'TERRITORIO' for ann in frase_med.anns['entities']]) and \
-                    any([ann.tag == 'NEG' for ann in frase_neg.anns['entities']]):
-                negation_sents.append(frase_neg)
-                print('FRASE:', frase_neg, frase_neg.txt)
-                # rwsl.write_ann_file(frase, output_path='dummy_data3')
-                # rwsl.write_txt_file(frase, output_path='dummy_data3')
-    new_doc = sent2doc(negation_sents)
-    rwsl.write_ann_file(new_doc, output_path='dummy_data3')
-    rwsl.write_txt_file(new_doc, output_path='dummy_data3')
+    """
+    new_doc = ann_structure.AnnSentence()
+    new_doc.name = doc.name
+    # Create big regex
+    rgx = '(?![^\W_])|'.join([re.escape(w) for w in word_dict.keys()])
+    # Current span
+    s_id = 0
+    # If the given doc already has annotations, copy them to our new doc and ontinue from the last id.
+    # Otherwise, start from 1.
+    if doc.anns['entities']:
+        new_doc.copy_doc(doc)
+        T_id = max([int(ent.name[1:]) for ent in doc.anns['entities']]) + 1
+        N_id = max([int(ent.name[1:]) for ent in doc.anns['notes']]) + 1
+    else:
+        T_id = 1
+        N_id = 1
+    p = re.compile(rgx, re.IGNORECASE)
+    for i, sent in enumerate(doc.txt):
+        # Try to match our patterns in each sentence
+        matches = p.finditer(sent)
+        if matches:
+            # Create annotations for every match
+            for match in matches:
+                ent_s_span = match.span()[0] + s_id
+                end_e_span = match.span()[1] + s_id
+                new_ent = peek.Entity(name='T{}'.format(T_id),
+                                      tag='_SUG_' + word_dict[match.group()][0],
+                                      text=match.group(),
+                                      span=((ent_s_span, end_e_span),))
+                if word_dict[match.group()][1] != '':
+                    new_note = peek.Note(name='#{}'.format(T_id),
+                                         tag='AnnotatorNotes',
+                                         ann_id='T{}'.format(T_id),
+                                         note=word_dict[match.group()][1])
+                    new_doc.anns['notes'].append(new_note)
+                    N_id += 1
+                new_doc.anns['entities'].append(new_ent)
+                T_id += 1
+        # Update current span
+        if sent == '\n':
+            s_id += len(sent)
+        else:
+            s_id += len(sent) + 1
+
+    return new_doc
+
+
+def clean_overlapping_suggestions(doc):
+    """
+    Clean created suggestions that overlap with other entities in the document
+    """
+    # Create a new document
+    new_doc = ann_structure.AnnSentence()
+    new_doc.name = doc.name
+    # Retrieve suggestions and existing annotations separately
+    suggs = [ann for ann in doc.anns['entities'] if ann.tag.startswith('_SUG_')]
+    existing_anns = [ann for ann in doc.anns['entities'] if not ann.tag.startswith('_SUG_')]
+
+    # Compare each suggestion with the existing annotations.
+    # If our suggestion has the exact same span or is inside another annotation, delete it.
+    for sugg in suggs:
+        if any([sugg.compare_overlap(ann) not in ['exact', 'nested-smaller'] for ann in existing_anns]):
+            pass
+
+
+def generate_suggestions_from_tsv(corpus, tsv):
+    word_dict = {}
+    with open(tsv, 'r') as f_in:
+        reader = csv.DictReader(f_in, delimiter='\t')
+        for line in reader:
+            word_dict[line['span']] = (line['label'], line['code'])
+    for doc in corpus.docs:
+        new_doc = generate_suggestion_re(doc, word_dict)
+        rwsl.write_ann_file(new_doc, '/home/salva/Documents/corpora/temporality/anotaciones/escalado/r2/preann+sug')
+
+
+def generate_tsv_for_suggestions(corpus, outpath):
+    pass
+
+
+if __name__ == "__main__":
+    temp = peek.AnnCorpus('/home/salva/Documents/corpora/temporality/anotaciones/escalado/r2/preann', txt=True)
+    tsv = '/home/salva/Documents/corpora/temporality/temporality_suggs.tsv'
+    generate_suggestions_from_tsv(temp, tsv)
+    pass
