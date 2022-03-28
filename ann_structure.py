@@ -68,16 +68,19 @@ class AnnCorpus:
         :return:
         '''
         counter = []
-        for collection in collections_set:
+        collections_list = list(collections_set)
+        collections_list.sort(key=len, reverse=True)
+        for collection in collections_list:
             d = 0
             for doc in self.docs:
                 # if collection in doc.path.split('/')[:-1]:
-                if collection in doc.path:
-                    doc.collection = collection
-                    d += 1
+                if not doc.collection:
+                    if collection in doc.path:
+                        doc.collection = collection
+                        d += 1
             counter.append(d)
             self.collections.append(collection)
-        print('Collections assigned:\n{}'.format('\n'.join([str(z) for z in zip(collections_set, counter)])))
+        print('Collections assigned:\n{}'.format('\n'.join([str(z) for z in zip(collections_list, counter)])))
 
     # Count
     def _count_corpus(self):
@@ -361,6 +364,12 @@ class AnnSentence(AnnDocument):
         self.count = self._count_tags()
         self.text_freq = self._text_frequency()
 
+    def copy_entity(self, ent):
+        """
+        Copy a textbound entity
+        """
+        self.anns['entities'].append(ent)
+
     def from_entity(self, ent):
         """
         Copy an entity's interactions (relations, events, attributes, ... pointing to it)
@@ -374,6 +383,13 @@ class AnnSentence(AnnDocument):
         if ent.notes:
             self.anns['notes'].extend(ent.notes)
 
+    def copy_doc(self, doc):
+        """
+        Copy all annotations from a given AnnDocument
+        """
+        for ann in doc.anns['entities']:
+            self.copy_entity(ann)
+            self.from_entity(ann)
 
 # Annotation line atoms
 # Entity (also called TextBound as they are the only ones that have text)
@@ -478,7 +494,6 @@ class Normalization:
 
 
 # Note
-# TODO: Connect comments with their annotations somehow
 class Note:
     def __init__(self, name: str, tag: str, ann_id: str, note: str):
         self.name = name
