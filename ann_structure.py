@@ -178,7 +178,10 @@ class AnnDocument:
         if txt:
             try:
                 with open(self.path[:-3] + 'txt', 'r') as doc_txt:
-                    self.txt = [sent.rstrip('\n') if sent != '\n' else sent for sent in doc_txt.readlines()]
+                    #self.txt = [sent.rstrip('\n') if sent != '\n' else sent for sent in doc_txt.readlines()]
+                    self.txt = [sent.rstrip('\n') for sent in doc_txt.readlines()]
+                    # To get the entire text as a string, you can join all items in the list using '\n'.join(doc.txt)
+                    # I know this is weird but it's a workaround for files with multiple newlines together
             except FileNotFoundError:
                 print('Text file for <{}> not found!'.format(self.path))
                 self.txt = []
@@ -331,7 +334,6 @@ class AnnDocument:
                 count[ann.tag].update([ann.text])
 
         return count
-    # TODO: Return lowercased as option
 
     # Co-occurrence
     # Document wise?
@@ -391,6 +393,7 @@ class AnnSentence(AnnDocument):
             self.copy_entity(ann)
             self.from_entity(ann)
 
+
 # Annotation line atoms
 # Entity (also called TextBound as they are the only ones that have text)
 class Entity:
@@ -417,6 +420,14 @@ class Entity:
                                                    self.span[1][0], self.span[1][1], self.text)
         else:
             return '{}\t{} {} {}\t{}'.format(self.name, self.tag, self.span[0][0], self.span[0][1], self.text)
+
+    def __eq__(self, other):
+        # A text-bound entity is the same as another if it has the same text, the same tag and the same span
+        return (self.text == other.text) and (self.tag == other.tag) and (self.span == other.span)
+
+    def __contains__(self, item):
+        # Whether a given text is in an annotation
+        return item in self.text
 
     def compare_overlap(self, other):
         """
