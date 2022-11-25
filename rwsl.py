@@ -142,14 +142,14 @@ def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
     # TODO: Only prints entities
     with open('{}/{}.tsv'.format(output_path, corpus.name), 'w') as f_out:
         writer = csv.writer(f_out, delimiter='\t')
-        writer.writerow(["name", "path", "tag", "span", "text", "note"])
+        writer.writerow(["name", "tag", "span", "text", "note"])
         for doc in corpus.docs:
             for ent in doc.anns['entities']:
                 if ent.tag not in to_ignore:
                     if ent.notes:
-                        writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text, ent.notes[0].note])
+                        writer.writerow([doc.name, ent.tag, ent.span, ent.text, ent.notes[0].note])
                     else:
-                        writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text])
+                        writer.writerow([doc.name, ent.tag, ent.span, ent.text])
 
     print('Written tsv file to {}/{}.tsv'.format(output_path, corpus.name))
 
@@ -166,17 +166,17 @@ def print_tsv_from_text_freq(corpus, output_path, lower=False, to_ignore=[]):
     """
     with open('{}/{}_text_freq.tsv'.format(output_path, corpus.name), 'w') as f_out:
         writer = csv.writer(f_out, delimiter='\t')
-        writer.writerow(["text", "frequency"])  # TODO: Add list of files column
+        writer.writerow(["text", "label", "frequency"])  # TODO: Add list of files column
         if lower:
             for cat in corpus.text_freq_lower:
                 if cat not in to_ignore:
                     for txt in corpus.text_freq_lower[cat]:
-                        writer.writerow([txt, corpus.text_freq_lower[cat][txt]])
+                        writer.writerow([txt, cat, corpus.text_freq_lower[cat][txt]])
         else:
             for cat in corpus.text_freq:
                 if cat not in to_ignore:
                     for txt in corpus.text_freq[cat]:
-                        writer.writerow([txt, corpus.text_freq[cat][txt]])
+                        writer.writerow([txt, cat, corpus.text_freq[cat][txt]])
 
     print('Written tsv file to {}/{}_text_freq.tsv'.format(output_path, corpus.name))
 
@@ -217,6 +217,28 @@ def print_tsv_for_norm(corpus, output_path, reference_tsv, to_ignore=[]):
                         writer.writerow([doc.name, doc.path, ent.tag, ent.span, ent.text])
 
     print('Written tsv file to {}/{}.tsv'.format(output_path, corpus.name))
+
+
+def print_tsv_for_notes():
+    pass
+
+
+def print_tsv_for_notes_unique(corpus, output_path):
+    """Create TSV file with the unique annotations and their associated notes"""
+    notes_dict = {}
+    for label in corpus.text_labels:
+        notes_dict[label] = {}
+
+    for doc in corpus.docs:
+        for ann in doc.anns['entities']:
+            if ann.text not in notes_dict[ann.tag].keys() and ann.notes:
+                notes_dict[ann.tag][ann.text] = ann.notes[0].note
+
+    with open(output_path + '/corpus_unique_notes.tsv', 'w') as f_out:
+        writer = csv.writer(f_out, delimiter='\t')
+        for label in notes_dict:
+            for ann in notes_dict[label]:
+                writer.writerow([ann, label, notes_dict[label][ann]])
 
 
 # PICKLE SAVE AND LOADING
