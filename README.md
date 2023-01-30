@@ -1,10 +1,21 @@
-# BRAT Peek 👀
+# brat Peek 👀
 
-Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
+> Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
+
+**brat Peek** 👀 is a Python framework for working with annotations in brat's standoff format (`.ann` files).
+
 
 [brat]: http://brat.nlplab.org/index.html
 
-## Features
+## Main features
+- Load `.ann` files using an object-oriented framework that allows easy access and manipulation to complete corpora as well as to individual documents and annotations.
+- Load `.txt` files to see annotations in context, check annotation spans and extract individual sentences.
+- Print different annotation statistics and output corpus contents in multiple formats.
+- Calculate evaluation metrics such as inter-annotator agreement and F-1 score between document collections.
+
+## How to use brat peek 👀
+A full documentation and example notebooks are in the works. Meanwhile, take a look at some examples of how to use brat peek 👀:
+
 * Framework for working with .ann files and collections.
         
         import peek
@@ -74,6 +85,10 @@ Peek into corpora annotated using brat rapid annotation tool ([brat][brat]).
       
         peek.txt.generate_suggestions_from_tsv(temp, tsv)
 
+
 ## Contact
-Brat Peek is a personal project, which means that currently new features are added as I personally need them. That being said, if you have any questions or suggestions, you can contact me at the following address:
-* Salvador Lima: salvador.limalopez@gmail.com
+brat peek is a personal project, which means that currently new features are added as I personally need them. 
+If you have any questions or suggestions, you can contact me at the following address:
+* Salvador Lima: <salvador.limalopez gmail com>
+
+For more information on brat, please visit its [GitHub repository](https://github.com/nlplab/brat) or [homepage](http://brat.nlplab.org/).
