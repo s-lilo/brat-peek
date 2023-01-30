@@ -10,6 +10,7 @@ import os
 from collections import defaultdict, Counter
 import glob
 import random
+import regex
 
 
 # Corpus object (compilation of multiple AnnDocument)
@@ -34,7 +35,7 @@ class AnnCorpus:
         else:
             content = self._construct_corpus(txt)
         self.docs = content
-        self.collections = []
+        self.collections = set()
         # Stats
         count = self._count_corpus()
         self.count = count
@@ -59,28 +60,25 @@ class AnnCorpus:
         return corpus
 
     # Corpus management
-    # Retrieve collection of file from regex
-    def create_collections(self, collections_set):
+    # We might have different types of documents, or even the same documents annotated with multiple systems
+    # Collections are a way to group documents within the same folder
+    # Two ways to do it:
+    # 1. If you have your documents in separate folders, this will retrieve it from the document's path
+    # and use its name as the collection
+    def create_collections_subfolders(self):
         '''
-        A corpus may have different types of texts or multiple batches.
-        This function looks for patterns in the documents' path to group them into 'collections'.
-        TODO: **Use regex to find match inside folder/file name?**
+        A corpus may have different types of texts or even the same texts annotated separated in subfolders.
+        This function automatically creates collections using the name of each file's folder.
         :return:
         '''
-        counter = []
-        collections_list = list(collections_set)
-        collections_list.sort(key=len, reverse=True)
-        for collection in collections_list:
-            d = 0
-            for doc in self.docs:
-                # if collection in doc.path.split('/')[:-1]:
-                if not doc.collection:
-                    if collection in doc.path:
-                        doc.collection = collection
-                        d += 1
-            counter.append(d)
-            self.collections.append(collection)
-        print('Collections assigned:\n{}'.format('\n'.join([str(z) for z in zip(collections_list, counter)])))
+        counter = defaultdict(int)
+        for doc in self.docs:
+            collection = doc.path.split('/')[-2]
+            counter[collection] += 1
+            self.collections.update([collection]) # ???
+        print('Collections assigned:\n{}'.format('\n'.join(['{}: {}'.format(c, counter[c]) for c in counter])))
+
+    # 2. TODO: Retrieve collection of file from filepath using regex
 
     # Count
     def _count_corpus(self):
@@ -143,7 +141,7 @@ class AnnCorpus:
         """
         return self.docs[random.randint(0, len(self.docs) - 1)]
 
-    def get_all_text_from_tag(self, tag):
+    def get_text_from_tag(self, tag):
         all_text = []
         for doc in self.docs:
             all_text.extend(doc.get_text_from_tag(tag))
@@ -257,7 +255,7 @@ class AnnDocument:
                     ann = self._parse_line(line)
                 except IndexError:
                     print(
-                        'File {} seems to be faulty, please check and load the corpus again. Ignoring for now...'.format(
+                        'File {} seems to be faulty, please check and load the corpus again. Ignoring wrongly-formatted line for now...'.format(
                             self.path))
                     continue
 
@@ -491,6 +489,8 @@ class Attribute:
         return '{}\t{} {}'.format(self.name, self.tag, " ".join(self.arguments))
 
     def check_type(self):
+        # Binary attributes only have one possible argument: its associated entity
+        # Multi-valued attributes have another argument on top of the associated entity: the attribute subtype
         return 'binary' if len(self.arguments) == 1 else "multi-valued"
 
 

@@ -5,6 +5,7 @@ import ann_structure
 
 import csv
 import pickle
+import os
 
 
 # .ANN
@@ -260,19 +261,26 @@ def load_corpus(input_path):
 
 
 # OTHERS
-def separate_tags(corpus, folder_a, folder_b):
+def separate_tags(corpus, output_folder, include_empty=True):
     """
-    I created this function originally to separate the two axis of annotation in the MEDDOPROF corpus,
-    which has tags like these: PACIENTE-PROFESION, SANITARIO-PROFESION, ...
-    Output two new versions of each annotated file, one only with PACIENTE/SANITARIO/... tags
-    and another with PROFESION...
+    Create new files to tags in different folders
     """
+    # Create a folder for each tag
+    for tag in corpus.text_labels:
+        os.makedirs(output_folder + '/' + tag, exist_ok=True)
+    # Go through each document
     for doc in corpus.docs:
-        f_name = doc.name
-        with open(folder_a + '/' + f_name + '.ann', 'w') as f_a:
-            with open(folder_b + '/' + f_name + '.ann', 'w') as f_b:
-                for ann in doc.anns['entities']:
-                    axis_a = ann_structure.Entity(ann.name, ann.tag.split('-')[0], ann.span, ann.text)
-                    f_a.write(str(axis_a) + '\n')
-                    axis_b = ann_structure.Entity(ann.name, ann.tag.split('-')[1], ann.span, ann.text)
-                    f_b.write(str(axis_b) + '\n')
+        # Iterate through tags in corpus
+        for tag in corpus.text_labels:
+            # Create new document
+            new_doc = ann_structure.AnnSentence()
+            new_doc.name = doc.name
+            # Get all annotations in document with our current tag
+            anns = [ann for ann in doc.anns['entities'] if ann.tag == tag]
+            # Stop here if the document has no annotations with this tag and include_empty is False
+            if not anns and not include_empty:
+                continue
+            # Copy entities to our new document
+            for ann in anns:
+                new_doc.copy_entity(ann)
+            peek.rwsl.write_ann_file(new_doc, output_folder  + '/' + tag)
