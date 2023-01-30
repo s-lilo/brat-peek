@@ -31,7 +31,7 @@ def join_ann_files(doc_list, output_path):
     Create a new .ann file in output_path with multiple annotations combined.
     WIP, I usually use it like this:
     corpus = ann_structure.AnnCorpus(in_path, txt=True)
-    corpus.create_collections(['X', 'Y', 'Z'])
+    corpus.create_collections_subfolders()
     for doc in [doc for doc in corpus.docs if doc.collection == 'X']:
         Y = corpus.get_doc_by_name(doc.name, 'Y')
         Z = corpus.get_doc_by_name(doc.name, 'Z')
@@ -283,4 +283,5 @@ def separate_tags(corpus, output_folder, include_empty=True):
             # Copy entities to our new document
             for ann in anns:
                 new_doc.copy_entity(ann)
+                new_doc.from_entity(ann)
             peek.rwsl.write_ann_file(new_doc, output_folder  + '/' + tag)
