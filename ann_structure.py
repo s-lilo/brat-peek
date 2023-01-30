@@ -62,7 +62,7 @@ class AnnCorpus:
     # Corpus management
     # We might have different types of documents, or even the same documents annotated with multiple systems
     # Collections are a way to group documents within the same folder
-    # Two ways to do it:
+    # Three ways to do it:
     # 1. If you have your documents in separate folders, this will retrieve it from the document's path
     # and use its name as the collection
     def create_collections_subfolders(self):
@@ -74,11 +74,39 @@ class AnnCorpus:
         counter = defaultdict(int)
         for doc in self.docs:
             collection = doc.path.split('/')[-2]
+            doc.collection = collection
             counter[collection] += 1
-            self.collections.update([collection]) # ???
+            self.collections.update([collection])
         print('Collections assigned:\n{}'.format('\n'.join(['{}: {}'.format(c, counter[c]) for c in counter])))
 
-    # 2. TODO: Retrieve collection of file from filepath using regex
+    # 2. Use a list of possible collections
+    def create_collections_list(self, collections_set):
+        counter = []
+        collections_list = list(collections_set)
+        collections_list.sort(key=len, reverse=True)
+        for collection in collections_list:
+            d = 0
+            for doc in self.docs:
+                # if collection in doc.path.split('/')[:-1]:
+                if not doc.collection:
+                    if collection in doc.path:
+                        doc.collection = collection
+                        d += 1
+            counter.append(d)
+            self.collections.update([collection])
+        print('Collections assigned:\n{}'.format('\n'.join([str(z) for z in zip(collections_list, counter)])))
+
+    # 3. Use a regular expression to look for a pattern inside the file's path
+    # TODO: This would be the general logic, need to fix, allow flags, etc.
+    # def create_collections_regex(self, re):
+    #     counter = defaultdict(int)
+    #     for doc in self.docs:
+    #         if regex.match(re, doc.path):
+    #             collection = re
+    #             doc.collection = collection
+    #             counter[collection] += 1
+    #             self.collections.update([collection])
+    #     print('Collections assigned:\n{}'.format('\n'.join(['{}: {}'.format(c, counter[c]) for c in counter])))
 
     # Count
     def _count_corpus(self):
