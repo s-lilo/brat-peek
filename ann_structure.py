@@ -11,6 +11,7 @@ from collections import defaultdict, Counter
 import glob
 import random
 import regex
+import copy
 
 
 # Corpus object (compilation of multiple AnnDocument)
@@ -119,9 +120,7 @@ class AnnCorpus:
             for k in doc.count.keys():
                 if k not in count.keys():
                     count[k] = Counter()
-                    count[k] += doc.count[k]
-                else:
-                    count[k] += doc.count[k]
+                count[k] += doc.count[k]
 
         return count
 
@@ -135,15 +134,13 @@ class AnnCorpus:
             if lower:
                 for k in doc.text_freq_lower.keys():
                     if k not in count.keys():
-                        count[k] = doc.text_freq_lower[k]
-                    else:
-                        count[k] += doc.text_freq_lower[k]
+                        count[k] = Counter()
+                    count[k] += doc.text_freq_lower[k]
             else:
                 for k in doc.text_freq.keys():
                     if k not in count.keys():
-                        count[k] = doc.text_freq[k]
-                    else:
-                        count[k] += doc.text_freq[k]
+                        count[k] = Counter()
+                    count[k] += doc.text_freq[k]
 
         return count
 
@@ -371,10 +368,10 @@ class AnnSentence(AnnDocument):
     A sentence is a special kind of AnnDocument that is fed metadata, annotations and text manually.
     """
 
-    def __init__(self):
+    def __init__(self, name='new_doc'):
         # Meta
         self.path = ""
-        self.name = ""
+        self.name = name
         self.source = ""
         # Content
         self.anns = {'entities': [], 'relations': [], 'events': [], 'attributes': [], 'notes': []}
@@ -395,21 +392,22 @@ class AnnSentence(AnnDocument):
     def copy_entity(self, ent):
         """
         Copy a textbound entity
+        We'll need to use deepcopy to create a separate object that won't change the original
         """
-        self.anns['entities'].append(ent)
+        self.anns['entities'].append(copy.deepcopy(ent))
 
     def from_entity(self, ent):
         """
         Copy an entity's interactions (relations, events, attributes, ... pointing to it)
         """
         if ent.rels:
-            self.anns['relations'].extend(ent.rels)
+            self.anns['relations'].extend(copy.deepcopy(ent.rels))
         if ent.events:
-            self.anns['events'].extend(ent.events)
+            self.anns['events'].extend(copy.deepcopy(ent.events))
         if ent.attr:
-            self.anns['attributes'].extend(ent.attr)
+            self.anns['attributes'].extend(copy.deepcopy(ent.attr))
         if ent.notes:
-            self.anns['notes'].extend(ent.notes)
+            self.anns['notes'].extend(copy.deepcopy(ent.notes))
 
     def copy_doc(self, doc):
         """
@@ -541,7 +539,7 @@ class Note:
         self.note = note
 
     def __repr__(self):
-        return "{}\t{} {}\t {}".format(self.name, self.tag, self.ann_id, self.note)
+        return "{}\t{} {}\t{}".format(self.name, self.tag, self.ann_id, self.note)
 
 
 class Placeholder:

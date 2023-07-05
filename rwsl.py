@@ -4,12 +4,15 @@ Read, write, save, load.
 import ann_structure
 
 import csv
+import json
 import pickle
 import os
 
 
 # .ANN
 import peek
+
+from ast import literal_eval
 
 
 def write_ann_file(doc, output_path):
@@ -129,6 +132,119 @@ def write_txt_file(doc, output_path):
     else:
         print('Could not find text for doc {}'.format(doc.name))
 
+def write_json_from_doc(doc, output_path, txt=False):
+    """
+    Create a JSON file that incorporates all annotations in the corpus and their related information.
+    Optionally, include the text as another field.
+    https://json-schema.org/understanding-json-schema/UnderstandingJSONSchema.pdf
+    """
+    json_dict = {"name": doc.name,
+                 "annotations":
+                     {ann.name: {"text": ann.text, "tag": ann.tag, "start_span": ann.span[0][0], "end_span": ann.span[0][1],
+                                 # TOOD: Notes, attributes, relations
+                                 "notes": {note.name: {"note": note.note} for note in ann.notes},
+                                 "attributes": {att.name: {"type":att.type, "tag": att.tag,
+                                                           "value":att.arguments[1] if att.type == 'multi-valued' else "True"}
+                                                for att in ann.attr}
+                                 }
+                      for ann in doc.anns['entities']}}
+
+    if txt:
+        if doc.txt:
+            json_dict["text"] = '\n'.join([sent for sent in doc.txt])
+        else:
+            print('AnnDoc object does not have an associated text')
+
+    with open(output_path + '/{}.json'.format(doc.name), 'w') as f_out:
+        json.dump(json_dict, f_out, indent=4, ensure_ascii=False)
+
+def write_json_from_corpus(corpus, output_path, txt=False):
+    """
+    Create a JSON file that incorporates all annotations in the corpus and their related information.
+    Optionally, include the text as another field.
+    """
+    json_dict = {}
+    for doc in corpus.docs:
+        doc_dict = {"name": doc.name,
+                     "annotations":
+                         {ann.name: {"text": ann.text, "tag": ann.tag, "start_span": ann.span[0][0],
+                                     "end_span": ann.span[0][1],
+                                     # TOOD: Notes, attributes, relations
+                                     "notes": {note.name: {"note": note.note} for note in ann.notes},
+                                     "attributes": {att.name: {"type": att.type, "tag": att.tag,
+                                                               "value": att.arguments[1] if att.type == 'multi-valued'
+                                                               else "True"} for att in ann.attr}
+                                     }
+                          for ann in doc.anns['entities']}}
+
+        if txt:
+            if doc.txt:
+                doc_dict["text"] = '\n'.join([sent for sent in doc.txt])
+            else:
+                print('AnnDoc object does not have an associated text')
+
+        json_dict[doc.name] = doc_dict
+
+    with open(output_path + '/{}.json'.format(corpus.name), 'w') as f_out:
+        json.dump(json_dict, f_out, indent=4, ensure_ascii=False)
+
+def from_corpus_tsv_to_ann(tsv_path, output_path):
+    """
+    Create ann files from a tsv that contains all corpus information
+    (like the file outputted by the function 'print_tsv_from_corpus')
+    :param tsv_path: str with the path to the tsv file to use
+    :param output_path: str with the folder where annotations will be saved
+    """
+    # Open TSV file
+    with open(tsv_path, 'r') as f_in:
+        tsv = csv.reader(f_in, delimiter='\t')
+        # Skip header
+        next(tsv)
+        # Dictionary to put together annotations for same file (better to save it like this just in case the TSV file is not ordered)
+        files_in_tsv = dict()
+        # Go through each line, assume our TSV has the following fields: ["name", "tag", "span", "text", "note", "attributes"]
+        for line in tsv:
+            # Make sure file is in dict
+            if not line[0] in files_in_tsv.keys():
+                files_in_tsv[line[0]] = []
+            files_in_tsv[line[0]].append(line[1:])
+        # Go through each document, create annotations and store the .ann files
+
+        for file in files_in_tsv.keys():
+            new_doc = peek.AnnSentence()
+            new_doc.name = file
+            t_id = 1
+            a_id = 1
+            n_id = 1
+            # New columns are "tag", "span", "text", "note", "attributes"
+            for ann in files_in_tsv[file]:
+                new_ent = peek.Entity(name='T{}'.format(t_id), tag=ann[0], span=literal_eval(ann[1]), text=ann[2])
+                new_doc.anns['entities'].append(new_ent)
+                if ann[3]:  # note
+                    new_note = peek.Note(name='#{}'.format(n_id), tag='AnnotatorNotes', ann_id='T{}'.format(t_id), note=ann[3])
+                    new_doc.anns['notes'].append(new_note)
+                    n_id += 1
+                if ann[4] and ann[4] != '[]':
+                    att_line = ann[4].strip('[]').split(',')
+                    for att in att_line:
+                        old_att = peek.AnnSentence._parse_line(att.lstrip(' '))
+                        new_args = ['T{}'.format(t_id)]
+                        if len(old_att.arguments) == 2:
+                            new_args.append(old_att.arguments[1])
+                        new_att = peek.Attribute(name='A{}'.format(a_id), tag=old_att.tag, arguments=new_args)
+                        new_doc.anns['attributes'].append(new_att)
+                        a_id += 1
+                t_id += 1
+            write_ann_file(new_doc, output_path)
+
+
+# TODO: I should modify the content of the tsv file to know where each annotation comes from, it might require some general rework of the text_freq attribute
+# def from_freq_tsv_to_ann(tsv_path, output_path):
+#     """
+#     Create ann files from a tsv that contains the corpus' annotations grouped together by label and frequency
+#     (like the file outputted by the function 'print_tsv_from_text_freq')
+#     """
+#     pass
 
 # .TSV
 def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
@@ -143,14 +259,20 @@ def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
     # TODO: Only prints entities
     with open('{}/{}.tsv'.format(output_path, corpus.name), 'w') as f_out:
         writer = csv.writer(f_out, delimiter='\t')
-        writer.writerow(["name", "tag", "span", "text", "note"])
+        writer.writerow(["name", "tag", "span", "text", "note", "attributes"])
         for doc in corpus.docs:
             for ent in doc.anns['entities']:
                 if ent.tag not in to_ignore:
+                    fields = [doc.name, ent.tag, ent.span, ent.text]
                     if ent.notes:
-                        writer.writerow([doc.name, ent.tag, ent.span, ent.text, ent.notes[0].note])
+                        fields.append(ent.notes[0].note)
                     else:
-                        writer.writerow([doc.name, ent.tag, ent.span, ent.text])
+                        fields.append('')
+                    if ent.attr:
+                        fields.append(ent.attr)
+                    else:
+                        fields.append('')
+                    writer.writerow(fields)
 
     print('Written tsv file to {}/{}.tsv'.format(output_path, corpus.name))
 
