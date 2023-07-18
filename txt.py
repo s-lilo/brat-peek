@@ -212,7 +212,11 @@ def clean_overlapping_suggestions(doc):
             pass
 
 
-def generate_suggestions_from_tsv(corpus, tsv):
+def generate_suggestions_from_tsv(corpus, tsv, outpath):
+    """
+    Creates suggestions for a whole corpus using suggestions from a TSV file.
+    The TSV file must have three columns (with headers): span, label and code
+    """
     word_dict = {}
     with open(tsv, 'r') as f_in:
         reader = csv.DictReader(f_in, delimiter='\t')
@@ -220,7 +224,7 @@ def generate_suggestions_from_tsv(corpus, tsv):
             word_dict[line['span']] = (line['label'], line['code'])
     for doc in corpus.docs:
         new_doc = generate_suggestion_re(doc, word_dict)
-        rwsl.write_ann_file(new_doc, '/home/salva/Documents/corpora/temporality/anotaciones/escalado/r10/preann+sug')
+        rwsl.write_ann_file(new_doc, outpath)
 
 
 def generate_tsv_for_suggestions(corpus, outpath):
