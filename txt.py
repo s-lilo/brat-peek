@@ -8,10 +8,10 @@ import re
 
 import peek
 
-# This will save us from writing lots of redundant code
 import rwsl
 
 
+# This will save us from writing lots of redundant code
 def txt_wrapper(f):
     '''
     Decorator to check whether an AnnDocument object has a text attribute associated.
@@ -22,6 +22,18 @@ def txt_wrapper(f):
         else:
             print('Text file for <{}> not found!'.format(doc.path))
     return check_txt
+
+
+@txt_wrapper
+def check_annotations_alignment(doc):
+    """
+    # TODO: Needs more testing, I think there might be some strange behaviour
+    Check whether the annotations in a document are properly aligned at span level and can be properly shown by brat.
+    """
+    full_txt = '\n'.join(doc.txt)
+    for ann in doc.anns['entities']:
+        if ann.text != full_txt[ann.span[0][0]:ann.span[0][1]]:
+            print('ANNOTATION NOT ALIGNED: ', ann.text, '|', doc.name)
 
 
 @txt_wrapper
@@ -55,7 +67,7 @@ def doc2sent(doc: ann_structure.AnnDocument, tokenizer=''):
             ending_span = current_span
         # Get annotations for the sentence
         for ent in doc.anns['entities']:
-            # If the annotation's span is inside the sentence's, construct a new AnnSentence
+            # If the annotation's span is inside the sentence's, construct a new entity
             if ent.span[0][0] >= current_span and ent.span[0][1] <= ending_span:
                 new_start_span = ent.span[0][0] - current_span
                 new_end_span = ent.span[0][1] - current_span
@@ -103,6 +115,14 @@ def sent2doc(sent_list):
     return ann_sent
 
 
+@txt_wrapper
+def get_text_window(doc: ann_structure.AnnDocument, annotation, size=75, direction="lr"):
+    """
+    Get context for a given annotation by retrieving the text beside it.
+    """
+    pass
+
+
 def annotation_density(corpus):
     # 1. Doc length
     ch_len = []
@@ -141,23 +161,25 @@ def generate_suggestion_re(doc, word_dict, flags=[]):
         T_id = 1
         N_id = 1
     p = re.compile(rgx, re.IGNORECASE)
+    total_sugs = 0
     for i, sent in enumerate(doc.txt):
         # Try to match our patterns in each sentence
         matches = p.finditer(sent)
         if matches:
             # Create annotations for every match
             for match in matches:
+                total_sugs += 1
                 ent_s_span = match.span()[0] + s_id
                 end_e_span = match.span()[1] + s_id
                 new_ent = peek.Entity(name='T{}'.format(T_id),
-                                      tag='_SUG_' + word_dict[match.group()][0],
+                                      tag='_SUG_' + word_dict[match.group().lower()][0],
                                       text=match.group(),
                                       span=((ent_s_span, end_e_span),))
-                if word_dict[match.group()][1] != '':
+                if word_dict[match.group().lower()][1] != '':
                     new_note = peek.Note(name='#{}'.format(T_id),
                                          tag='AnnotatorNotes',
                                          ann_id='T{}'.format(T_id),
-                                         note=word_dict[match.group()][1])
+                                         note=word_dict[match.group().lower()][1])
                     new_doc.anns['notes'].append(new_note)
                     N_id += 1
                 new_doc.anns['entities'].append(new_ent)
@@ -168,6 +190,7 @@ def generate_suggestion_re(doc, word_dict, flags=[]):
         else:
             s_id += len(sent) + 1
 
+    print('Total sugggestions: {}'.format(total_sugs))
     return new_doc
 
 
@@ -197,9 +220,12 @@ def generate_suggestions_from_tsv(corpus, tsv):
             word_dict[line['span']] = (line['label'], line['code'])
     for doc in corpus.docs:
         new_doc = generate_suggestion_re(doc, word_dict)
-        rwsl.write_ann_file(new_doc, '/home/salva/Documents/corpora/temporality/anotaciones/escalado/r2/preann+sug')
+        rwsl.write_ann_file(new_doc, '/home/salva/Documents/corpora/temporality/anotaciones/escalado/r10/preann+sug')
 
 
 def generate_tsv_for_suggestions(corpus, outpath):
     pass
 
+
+if __name__ == '__main__':
+    pass
