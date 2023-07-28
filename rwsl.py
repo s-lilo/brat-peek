@@ -263,7 +263,10 @@ def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
         for doc in corpus.docs:
             for ent in doc.anns['entities']:
                 if ent.tag not in to_ignore:
-                    fields = [doc.name, ent.tag, ent.span, ent.text]
+                    # Print non-discontinuous annotations in a nicer way
+                    if len(ent.span) == 1:
+                        span = '{}, {}'.format(ent.span[0][0], ent.span[0][1])
+                    fields = [doc.name, ent.tag, span, ent.text]
                     if ent.notes:
                         fields.append(ent.notes[0].note)
                     else:
