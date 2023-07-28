@@ -116,12 +116,37 @@ def sent2doc(sent_list):
 
 
 @txt_wrapper
-def get_text_window(doc: ann_structure.AnnDocument, annotation, size=75, direction="lr"):
+def get_text_window(doc: ann_structure.AnnDocument, annotation, size=75, direction="lr", include_mention=True):
     """
     Get context for a given annotation by retrieving the text beside it.
+    doc: AnnDocument the annotation belongs to, loaded with txt=True
+    ann: Entity object
+    size: number of characters to include in the text window
+    direction: sides to include in the text window (either l for left, r for right, or lr for both)
+    include_mention: whether to include the mention text in the output string (surrounded by a double pipe character || to distinguish it)
     """
-    pass
+    # Get text
+    txt = '\n'.join([sent for sent in doc.txt])
+    # Get left and right windows
 
+    # Create string
+    output_string = ''
+    if 'l' in direction:
+        l_slice = int(annotation.span[0][0]) - int(size)
+        if l_slice < 0:
+            l_slice = 0
+        l = txt[l_slice:int(annotation.span[0][0])]
+        output_string += l
+    if include_mention:
+        output_string += '||{}||'.format(annotation.text)
+    if 'r' in direction:
+        r_slice = int(annotation.span[0][0]) + int(size)
+        if r_slice > len(txt):
+            r_slice = len(txt)
+        r = txt[int(annotation.span[0][1]):r_slice]
+        output_string += r
+
+    return output_string
 
 def annotation_density(corpus):
     # 1. Doc length
