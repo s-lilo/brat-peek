@@ -119,36 +119,37 @@ def create_stats_row(ann_corpus, columns, include_txt=False):
     return columns
 
 
-def print_corpus_summary(ann_corpus):
+def print_corpus_summary(ann_corpus, verbose=False):
+    """
+    Describes a corpus using some general statistics
+    """
     print('# SUMMARY FOR CORPUS {} AT {}'.format(ann_corpus.name, ann_corpus.path))
-    print('## TEXT STATISTICS')
     print('This corpus has a total of {} documents.'.format(len(ann_corpus.docs)))
-    print('\n## ANNOTATION STATISTICS')
     print('This corpus has a total of {} text annotations from {} labels'.format(sum(ann_corpus.count['entities'].values()), len(ann_corpus.text_labels)))
     print('The labels in this corpus are: {}'.format(', '.join([label for label in ann_corpus.text_labels])))
-    print('\nThis is the label distribution in the corpus:')
-    # TODO: Make it pretty
-    for label in ann_corpus.text_labels:
-        print('{} | Total: {} | Unique: {} ({}% of total), {} ({}% of total) lowercased'.
-              format(label,
-                     ann_corpus.count['entities'][label],
-                     len(ann_corpus.text_freq[label]),
-                     round((len(ann_corpus.text_freq[label]) / ann_corpus.count['entities'][label]) * 100, 2),
-                     len(ann_corpus.text_freq_lower[label]),
-                     round((len(ann_corpus.text_freq_lower[label]) / ann_corpus.count['entities'][label]) * 100, 2)
-                     ))
-    print('TOTAL | Total: {} | Unique: {} ({}% of total), {} ({}% of total) lowercased'.format(
-        sum(ann_corpus.count['entities'].values()),
-        sum([len(ann_corpus.text_freq[lab].values()) for lab in ann_corpus.text_labels]),
-        round(sum([len(ann_corpus.text_freq[lab].values()) for lab in ann_corpus.text_labels]) / sum(ann_corpus.count['entities'].values()) * 100, 2),
-        sum([len(ann_corpus.text_freq_lower[lab].values()) for lab in ann_corpus.text_labels]),
-        round(sum([len(ann_corpus.text_freq_lower[lab].values()) for lab in ann_corpus.text_labels]) / sum(ann_corpus.count['entities'].values()) * 100, 2)))
-    print('\nThis is the top 10 most common (lowercased) annotations for each tag:')
-    for label in ann_corpus.text_labels:
-        print('- {} | {}'.
-              format(label, ann_corpus.text_freq_lower[label].most_common(10)
-                     ))
-
+    if verbose:
+        print('\nThis is the label distribution in the corpus:')
+        # TODO: Make it pretty
+        for label in ann_corpus.text_labels:
+            print('{} | Total: {} | Unique: {} ({}% of total), {} ({}% of total) lowercased'.
+                  format(label,
+                         ann_corpus.count['entities'][label],
+                         len(ann_corpus.text_freq[label]),
+                         round((len(ann_corpus.text_freq[label]) / ann_corpus.count['entities'][label]) * 100, 2),
+                         len(ann_corpus.text_freq_lower[label]),
+                         round((len(ann_corpus.text_freq_lower[label]) / ann_corpus.count['entities'][label]) * 100, 2)
+                         ))
+        print('TOTAL | Total: {} | Unique: {} ({}% of total), {} ({}% of total) lowercased'.format(
+            sum(ann_corpus.count['entities'].values()),
+            sum([len(ann_corpus.text_freq[lab].values()) for lab in ann_corpus.text_labels]),
+            round(sum([len(ann_corpus.text_freq[lab].values()) for lab in ann_corpus.text_labels]) / sum(ann_corpus.count['entities'].values()) * 100, 2),
+            sum([len(ann_corpus.text_freq_lower[lab].values()) for lab in ann_corpus.text_labels]),
+            round(sum([len(ann_corpus.text_freq_lower[lab].values()) for lab in ann_corpus.text_labels]) / sum(ann_corpus.count['entities'].values()) * 100, 2)))
+        print('\nThis is the top 10 most common (lowercased) annotations for each tag:')
+        for label in ann_corpus.text_labels:
+            print('- {} | {}'.
+                  format(label, ann_corpus.text_freq_lower[label].most_common(10)
+                         ))
 
 if __name__ == '__main__':
     pass
