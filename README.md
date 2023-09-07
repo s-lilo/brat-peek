@@ -17,7 +17,7 @@
 A full documentation and example notebooks are in the works. Meanwhile, take a look at some examples of how to use brat peek 👀:
 
 * Framework for working with .ann files and collections.
-        
+
         import peek
         corpus = peek.AnnCorpus('dummy_data/')
         # Access a random document...
@@ -32,7 +32,7 @@ A full documentation and example notebooks are in the works. Meanwhile, take a l
         print(doc.anns.items())
 
 * See the annotations in a corpus at a glance with stats and graphs.
-    
+
         print('Corpus stats:', corpus.count)
         print('Entity labels found in corpus: ', corpus.text_labels)
         print('Document 42 annotations:', corpus.docs[41].anns)
@@ -40,15 +40,15 @@ A full documentation and example notebooks are in the works. Meanwhile, take a l
         peek.stats.plot_tags(corpus)
         # Generate .tsv with statistics
         peek.stats.generate_corpus_stats_tsv(corpus, include_txt=True)
-  
+
 * Check out the most common annotated text spans.
-  
+
         print(corpus.text_freq)
         print(corpus.text_freq['Organism'].most_common(5))
         print(corpus.text_freq_lower)
 
 * Print a corpus's content to a .tsv file.
-  
+
         # Create .tsv file from corpus (to_ignore is an optional argument)
         peek.rwsl.print_tsv_from_corpus(corpus, 'output_folder/', to_ignore=['Organism'])
         # Create .tsv with text frequencies
@@ -57,7 +57,7 @@ A full documentation and example notebooks are in the works. Meanwhile, take a l
         peek.rwsl.print_tsv_for_norm(corpus, 'output_folder/', 'reference.tsv', to_ignore=['Organism'])
 
 * Calculate metrics for different corpora.
-  
+
         # Calculate IAA and print .tsv file with disagreements [code based on https://github.com/TeMU-BSC/iaa-computation]
         peek.metrics.show_iaa([corpus1, corpus2], ['filename', 'label', 'offset'], ['Organism'], tsv=True)
         # You can use specific labels, as shown above, or use the text_labels attribute to use all the labels in the corpus at once.
@@ -66,7 +66,7 @@ A full documentation and example notebooks are in the works. Meanwhile, take a l
         peek.metrics.show_fscore(gs, pred, gs.text_labels)
 
 * Extract sentences from documents to create customizable annotation files.
-        
+
         # Set txt to True when creating an AnnCorpus object to also read .txt files
         corpus = peek.AnnCorpus('dummy_data/', txt=True)
         # Separate document into individual sentences, adjusting annotation spans in the way.
@@ -82,12 +82,19 @@ A full documentation and example notebooks are in the works. Meanwhile, take a l
         corpus = peek.rwsl.load_corpus('temp/dummy_data.pckl')
 
 * Suggest annotations to speed up your annotation process (on the works - mostly untested)
-      
+
         peek.txt.generate_suggestions_from_tsv(temp, tsv)
+
+* Convert brat files into [spaCy](https://spacy.io) objects
+
+        corpus = peek.AnnCorpus('dummy_data/', txt=True)
+        nlp = spacy.load(...)
+        spacy_docs = peek.rwsl.brat2spacy(corpus, nlp)
+
 
 
 ## Contact
-brat peek is a personal project, which means that currently new features are added as I personally need them. 
+brat peek is a personal project, which means that currently new features are added as I personally need them.
 If you have any questions or suggestions, you can contact me at the following address:
 * Salvador Lima: <salvador.limalopez gmail com>
 
