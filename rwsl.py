@@ -10,11 +10,15 @@ import os
 
 
 # .ANN
+# TODO: Redundant import with ann_structure above, need to fix
 import peek
+
+import spacy
 
 from ast import literal_eval
 
 
+# BRAT .ANN FILES FUNCTIONS
 def write_ann_file(doc, output_path):
     """
     Create new .ann file in output_path with annotations in doc.
@@ -383,6 +387,50 @@ def load_corpus(input_path):
     """
     with open(input_path, 'rb') as f_in:
         return pickle.load(f_in)
+
+
+
+# CONVERT TO SPACY
+def brat2spacy(AnnCorpus, nlp):
+    """
+    Convert brat files into spacy format. Attach filename as Doc extension and annotations as spans in a SpanGroup.
+
+    Requires AnnCorpus object to be loaded with txt=True.
+
+    Returns a list of Spacy docs.
+    """
+    from spacy.tokens import Doc, Span
+
+    if not all(doc.txt for doc in AnnCorpus.docs):
+        raise ValueError('Corpus must be loaded together with text files. Please reload the corpus with txt=True as an argument and try again.')
+
+    # Set filename extension
+    if not Doc.has_extension("filename"):
+        Doc.set_extension("filename", default=None)
+
+    # Create text, filename tuples
+    text_tuples = [('\n'.join(doc.txt), {"filename": doc.name}) for doc in AnnCorpus.docs]
+    doc_tuples = nlp.pipe(text_tuples, as_tuples=True)
+
+    # Iterate through docs to assign filenames and entities
+    docs = []
+    for spacy_doc, context in doc_tuples:
+        # Assign filename
+        spacy_doc._.filename = context["filename"]
+        # print(f"{spacy_doc._.filename}")
+        # Get brat peek document
+        brat_doc = AnnCorpus.get_doc_by_name(context["filename"])
+        # Create SpanGroup (https://spacy.io/api/spangroup)
+        spacy_doc.spans["sc"] = []
+        # Iterate through entities
+        for ann in brat_doc.anns['entities']:
+            # Create entity, by default use expand mode to avoid token alignment problems (https://spacy.io/api/span#char_span)
+            span = spacy_doc.char_span(ann.span[0][0], ann.span[0][1], label=ann.tag, alignment_mode="expand")
+            spacy_doc.spans["sc"].append(span)
+            # assert span.text == ann.text
+        docs.append(spacy_doc)
+    
+    return docs
 
 
 # OTHERS
