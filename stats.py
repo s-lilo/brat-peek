@@ -4,12 +4,16 @@ Visualization and stats reporting.
 import ann_structure
 
 import csv
-from collections import defaultdict
 import os
+import unidecode
 
 import seaborn as sns
-from pandas import DataFrame as df
 import matplotlib.pyplot as plt
+
+from collections import defaultdict
+
+from pandas import DataFrame as df
+
 # import spacy
 
 sns.set_theme(style="darkgrid")
@@ -30,19 +34,19 @@ def plot_tags(ann_corpus):
 
 
 # Overview
-def generate_corpus_stats_tsv(ann_corpus, collections=False, include_txt=False):
+def generate_corpus_stats_tsv(ann_corpus, out_path, collections=False, include_txt=False):
     '''
     Generates a .tsv file with an overview of the corpus.
     Includes: number of documents, total and average of sentences and tokens (if include_txt is set to True),
               total and average of entities both in general and by text label.
     :param ann_corpus: AnnCorpus object
+    :param out_path: string, path where the tsv will be written to
     :param collections: whether to calculate statistics for each collection in corpus individually.
     :param include_txt: whether to calculate text statistics or not. If set to true, the AnnCorpus object must
                         have been created using the txt parameter.
     # TODO: Tokenization is very, very naïve. Use actual tokenizers.
     '''
-    out_path = os.path.join('/'.join(ann_corpus.path.split('/')[:-1]), '{}_corpus_summary.tsv'.format(ann_corpus.name))
-    with open(out_path, 'w') as f_out:
+    with open(out_path + '/{}_corpus_summary.tsv'.format(ann_corpus.name), 'w') as f_out:
         # Creater header row
         first_row = ["corpus", "docs"]
         # Columns for text statistics
@@ -82,7 +86,7 @@ def generate_corpus_stats_tsv(ann_corpus, collections=False, include_txt=False):
             stats_row = create_stats_row(ann_corpus, columns, include_txt=include_txt)
             writer.writerow(stats_row)
 
-        print('Written .tsv stats file to {}'.format(out_path))
+        print('Written .tsv stats file to {}'.format(out_path + '/{}_corpus_summary.tsv'.format(ann_corpus.name)))
 
 
 def create_stats_row(ann_corpus, columns, include_txt=False):
