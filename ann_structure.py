@@ -10,7 +10,6 @@ import os
 from collections import defaultdict, Counter
 import glob
 import random
-import regex
 import copy
 
 
@@ -47,6 +46,10 @@ class AnnCorpus:
         self.rel_labels = sorted(list(set([ent for ent in self.count['relations']])))
         self.event_labels = sorted(list(set([ent for ent in self.count['events']])))
         self.attr_labels = sorted(list(set([ent for ent in self.count['attributes']])))
+
+    def __len__(self):
+        # Returns the number of documents in the corpus
+        return len(self.docs)
 
     # Corpus construction
     def _construct_corpus(self, with_text=False):
