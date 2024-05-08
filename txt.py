@@ -25,16 +25,36 @@ def txt_wrapper(f):
 
 
 @txt_wrapper
-def check_annotations_alignment(doc):
+def check_annotations_alignment_doc(doc):
     """
     # TODO: Needs more testing, I think there might be some strange behaviour
     Check whether the annotations in a document are properly aligned at span level and can be properly shown by brat.
     """
     full_txt = '\n'.join(doc.txt)
+    misalignment = False
     for ann in doc.anns['entities']:
         if ann.text != full_txt[ann.span[0][0]:ann.span[0][1]]:
             print('ANNOTATION NOT ALIGNED: ', ann.text, '|', doc.name)
+            misalignment = True
+    return misalignment
 
+
+def check_annotations_alignment_corpus(corpus):
+    """
+    # TODO: Needs more testing, I think there might be some strange behaviour at doc level
+    Check whether the annotations in a document are properly aligned at span level and can be properly shown by brat.
+    """
+    misaligned_list = []
+    for doc in corpus.docs:
+        if check_annotations_alignment_doc(doc):
+            misaligned_list.append(doc.name)
+
+    if not misaligned_list:
+        print('No annotations misaligned in corpus!')
+    else:
+        print('Some annotations are misaligned! Please check the following files:')
+        print(misaligned_list)
+    return misaligned_list
 
 @txt_wrapper
 def doc2sent(doc: ann_structure.AnnDocument, tokenizer=''):
@@ -148,6 +168,7 @@ def get_text_window(doc: ann_structure.AnnDocument, annotation, size=75, directi
 
     return output_string
 
+
 def annotation_density(corpus):
     # 1. Doc length
     ch_len = []
@@ -161,6 +182,7 @@ def annotation_density(corpus):
     relative_ending_point = []
     # 3.
     pass
+    # TODO: Finish this
 
 
 @txt_wrapper
@@ -235,6 +257,7 @@ def clean_overlapping_suggestions(doc):
     for sugg in suggs:
         if any([sugg.compare_overlap(ann) not in ['exact', 'nested-smaller'] for ann in existing_anns]):
             pass
+            # TODO: Finish function
 
 
 def generate_suggestions_from_tsv(corpus, tsv, outpath):
