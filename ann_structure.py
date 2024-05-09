@@ -226,6 +226,10 @@ class AnnDocument:
         # TODO: verbose and non-verbose? (don't print things that = 0)
         return self.name
 
+    def __contains__(self, item):
+        # Returns whether a given annotation is equal to another annotation within the document
+        return any([item == ann for ann in self.anns['entities']])
+
     # Line understanding
     @staticmethod
     def _parse_line(line):
@@ -465,6 +469,8 @@ class Entity:
         other: []       []              [   ]             [   ]         [   ]
 
         # TODO: Discontinuous spans!!
+        # TODO possible bug? Contiguous annotations are considered overlaps with the rules below, this should not be the case
+        # (e.g. if an annotation ends at ch 170 (not included in the actual text) and another starts at ch 170 (this time included in the text))
         :param other: other Entity object.
         :return: string with overlap type.
         """
