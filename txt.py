@@ -160,7 +160,7 @@ def get_text_window(doc: ann_structure.AnnDocument, annotation, size=75, directi
     if include_mention:
         output_string += '||{}||'.format(annotation.text)
     if 'r' in direction:
-        r_slice = int(annotation.span[0][0]) + int(size)
+        r_slice = int(annotation.span[0][1]) + int(size)
         if r_slice > len(txt):
             r_slice = len(txt)
         r = txt[int(annotation.span[0][1]):r_slice]
