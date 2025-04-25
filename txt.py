@@ -34,7 +34,7 @@ def check_annotations_alignment_doc(doc):
     misalignment = False
     for ann in doc.anns['entities']:
         if ann.text != full_txt[ann.span[0][0]:ann.span[0][1]]:
-            print('ANNOTATION NOT ALIGNED: ', ann.text, '|', doc.name)
+            print('ANNOTATION NOT ALIGNED: ', ann.text, '|', doc.name, '|', 'current span:', full_txt[ann.span[0][0]:ann.span[0][1]])
             misalignment = True
     return misalignment
 
@@ -192,72 +192,110 @@ def generate_suggestion_re(doc, word_dict, flags=[]):
     The dict must have the text to look up as key and a tuple inside: class and comment (to be added to brat's comment field, e.g. for codification - can be empty)
 
     """
-    new_doc = ann_structure.AnnSentence()
+    new_doc = peek.AnnSentence()
     new_doc.name = doc.name
-    # Create big regex
-    rgx = '(?![^\W_])|'.join([re.escape(w) for w in word_dict.keys()])
-    # Current span
-    s_id = 0
-    # If the given doc already has annotations, copy them to our new doc and ontinue from the last id.
-    # Otherwise, start from 1.
+
+    # Construct regex to match whole expressions while avoiding partial matches
+    rgx = r'(?<!\w)(' + '|'.join(map(re.escape, word_dict.keys())) + r')(?!\w)'
+
+    # If the document already has annotations, copy them and continue numbering
     if doc.anns['entities']:
         new_doc.copy_doc(doc)
-        T_id = max([int(ent.name[1:]) for ent in doc.anns['entities']]) + 1
-        N_id = max([int(ent.name[1:]) for ent in doc.anns['notes']]) + 1
+        T_id = max(int(ent.name[1:]) for ent in doc.anns['entities']) + 1
+        N_id = max((int(ent.name[1:]) for ent in doc.anns['notes']), default=0) + 1
     else:
         T_id = 1
         N_id = 1
+
     p = re.compile(rgx, re.IGNORECASE)
     total_sugs = 0
-    for i, sent in enumerate(doc.txt):
-        # Try to match our patterns in each sentence
+    s_id = 0  # Keeps track of character position in the document
+
+    for i, sent in enumerate(doc.txt):  # Keeping this unchanged
         matches = p.finditer(sent)
-        if matches:
-            # Create annotations for every match
-            for match in matches:
-                total_sugs += 1
-                ent_s_span = match.span()[0] + s_id
-                end_e_span = match.span()[1] + s_id
-                new_ent = peek.Entity(name='T{}'.format(T_id),
-                                      tag='_SUG_' + word_dict[match.group().lower()][0],
-                                      text=match.group(),
-                                      span=((ent_s_span, end_e_span),))
-                if word_dict[match.group().lower()][1] != '':
-                    new_note = peek.Note(name='#{}'.format(T_id),
-                                         tag='AnnotatorNotes',
-                                         ann_id='T{}'.format(T_id),
-                                         note=word_dict[match.group().lower()][1])
-                    new_doc.anns['notes'].append(new_note)
-                    N_id += 1
-                new_doc.anns['entities'].append(new_ent)
-                T_id += 1
-        # Update current span
+
+        for match in matches:
+            total_sugs += 1
+            ent_s_span = match.start() + s_id
+            ent_e_span = match.end() + s_id
+            matched_text = match.group()
+
+            # Ensure the dictionary lookup is always in lowercase
+            tag, note = word_dict.get(matched_text.lower(), ("UNKNOWN", ""))
+
+            new_ent = peek.Entity(
+                name=f'T{T_id}',
+                tag=f'_SUG_{tag}',
+                text=matched_text,
+                span=((ent_s_span, ent_e_span),)
+            )
+
+            new_doc.anns['entities'].append(new_ent)
+
+            if note:
+                new_note = peek.Note(
+                    name=f'#{N_id}',
+                    tag='AnnotatorNotes',
+                    ann_id=f'T{T_id}',
+                    note=note
+                )
+                new_doc.anns['notes'].append(new_note)
+                N_id += 1  # Increment note ID
+
+            T_id += 1  # Increment entity ID
+
+        # Update span position correctly
         if sent == '\n':
             s_id += len(sent)
         else:
             s_id += len(sent) + 1
 
-    print('Total sugggestions: {}'.format(total_sugs))
+    print(f'Total suggestions: {total_sugs}')
     return new_doc
 
 
-def clean_overlapping_suggestions(doc):
+def clean_overlapping_annotations(doc, only_same_label=True, ignore_sug_prefix=True):
     """
-    Clean created suggestions that overlap with other entities in the document
+    # TODO: Not sure txt.py is the correct location for this function
+    Remove annotations that occupy the same text span.
+    This will remove annotations with the exact same span and annotations that are contained within a larger one.
+    Try to keep a backup of the original documents to avoid unwanted results.
+    only_same_label: Whether to only remove annotations that have the same label
+    ignore_sug_prefix: Whether to ignore the '_SUG_' prefix added to suggestions when considering labels
     """
     # Create a new document
-    new_doc = ann_structure.AnnSentence()
+    new_doc = peek.AnnSentence()
     new_doc.name = doc.name
-    # Retrieve suggestions and existing annotations separately
-    suggs = [ann for ann in doc.anns['entities'] if ann.tag.startswith('_SUG_')]
-    existing_anns = [ann for ann in doc.anns['entities'] if not ann.tag.startswith('_SUG_')]
+    anns_to_keep = []
 
-    # Compare each suggestion with the existing annotations.
-    # If our suggestion has the exact same span or is inside another annotation, delete it.
-    for sugg in suggs:
-        if any([sugg.compare_overlap(ann) not in ['exact', 'nested-smaller'] for ann in existing_anns]):
-            pass
-            # TODO: Finish function
+    # Go through the annotations and keep them based on overlaps
+    for ann in doc.anns['entities']:
+        # Possible overlap types are exact, nested-bigger, nested-smaller, starts-before, ends-after and None
+        # We need to use 'is not' to compare the objects themselves, if we use == for equality it will not work!
+        overlaps = [(ann2, ann.compare_overlap(ann2)) for ann2 in [ann2 for ann2 in doc.anns['entities'] if ann is not ann2]]
+        if only_same_label and ignore_sug_prefix:
+            overlaps = [ann_overl for ann_overl in overlaps if ann_overl[0].tag.replace('_SUG_', '') == ann.tag.replace('_SUG_', '')]
+        elif only_same_label:
+            overlaps = [ann_overl for ann_overl in overlaps if ann_overl[0].tag == ann.tag]
+
+        # Annotations with no overlap we'll just take them and move on
+        if all([overlap[1] is None for overlap in overlaps]):
+            anns_to_keep.append(ann)
+        elif any([overlap[1] == 'exact' for overlap in overlaps]):
+            if not any([ann.span == kept_ann.span for kept_ann in anns_to_keep]):
+                anns_to_keep.append(ann)
+        # Annotations with the same label that are nested within a bigger one are removed
+        elif any([overlap[1] == 'nested-smaller' for overlap in overlaps]):
+            continue
+        else:
+            anns_to_keep.append(ann)
+
+    # Save non-overlapping annotations
+    for ann in anns_to_keep:
+        new_doc.copy_entity(ann)
+        new_doc.from_entity(ann)
+
+    return new_doc
 
 
 def generate_suggestions_from_tsv(corpus, tsv, outpath):
