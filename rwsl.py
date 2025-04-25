@@ -95,6 +95,7 @@ def add_default_attribute(corpus, attribute_tuple, output_path):
     The option to use default attributes in brat only applies to new annotations (as expected).
     This function adds a default attribute to existing .ann files for new layers of annotation.
     Attribute must be a tuple with two elements: tag and arguments
+    e.g. peek.rwsl.add_default_attribute(corpus, ('Assertion', 'Presente'), output_path)
     """
     for doc in corpus.docs:
         new_doc = peek.AnnSentence()
@@ -136,6 +137,7 @@ def write_txt_file(doc, output_path):
     else:
         print('Could not find text for doc {}'.format(doc.name))
 
+
 def write_json_from_doc(doc, output_path, txt=False):
     """
     Create a JSON file that incorporates all annotations in the corpus and their related information.
@@ -161,6 +163,7 @@ def write_json_from_doc(doc, output_path, txt=False):
 
     with open(output_path + '/{}.json'.format(doc.name), 'w') as f_out:
         json.dump(json_dict, f_out, indent=4, ensure_ascii=False)
+
 
 def write_json_from_corpus(corpus, output_path, txt=False):
     """
@@ -191,6 +194,7 @@ def write_json_from_corpus(corpus, output_path, txt=False):
 
     with open(output_path + '/{}.json'.format(corpus.name), 'w') as f_out:
         json.dump(json_dict, f_out, indent=4, ensure_ascii=False)
+
 
 def from_corpus_tsv_to_ann(tsv_path, output_path):
     """
@@ -260,17 +264,15 @@ def print_tsv_from_corpus(corpus, output_path, to_ignore=[]):
     :param to_ignore: list of str
     :return: writes tsv
     """
-    # TODO: Only prints entities
+    # TODO: Missing relations and some other entity types
     with open('{}/{}.tsv'.format(output_path, corpus.name), 'w') as f_out:
         writer = csv.writer(f_out, delimiter='\t')
-        writer.writerow(["name", "tag", "span", "text", "note", "attributes"])
+        writer.writerow(["name", "tag", "start_span", "end_span", "text", "note", "attributes"])
         for doc in corpus.docs:
             for ent in doc.anns['entities']:
                 if ent.tag not in to_ignore:
-                    # Print non-discontinuous annotations in a nicer way
-                    if len(ent.span) == 1:
-                        span = '{}, {}'.format(ent.span[0][0], ent.span[0][1])
-                    fields = [doc.name, ent.tag, span, ent.text]
+                    # TODO: Do something with discontinuous annotations
+                    fields = [doc.name, ent.tag, ent.span[0][0], ent.span[0][1], ent.text]
                     if ent.notes:
                         fields.append(ent.notes[0].note)
                     else:
@@ -361,6 +363,7 @@ def print_tsv_for_notes_unique(corpus, output_path):
 
     for doc in corpus.docs:
         for ann in doc.anns['entities']:
+            # TODO: with this we just ignore possible ambiguous entities, is there a better solution?
             if ann.text not in notes_dict[ann.tag].keys() and ann.notes:
                 notes_dict[ann.tag][ann.text] = ann.notes[0].note
 
@@ -387,7 +390,6 @@ def load_corpus(input_path):
     """
     with open(input_path, 'rb') as f_in:
         return pickle.load(f_in)
-
 
 
 # CONVERT TO SPACY
@@ -436,7 +438,7 @@ def brat2spacy(AnnCorpus, nlp):
 # OTHERS
 def separate_tags(corpus, output_folder, include_empty=True):
     """
-    Create new files to tags in different folders
+    Create separate files for each different tag in different folders
     """
     # Create a folder for each tag
     for tag in corpus.text_labels:
@@ -457,4 +459,4 @@ def separate_tags(corpus, output_folder, include_empty=True):
             for ann in anns:
                 new_doc.copy_entity(ann)
                 new_doc.from_entity(ann)
-            peek.rwsl.write_ann_file(new_doc, output_folder  + '/' + tag)
+            peek.rwsl.write_ann_file(new_doc, output_folder + '/' + tag)
