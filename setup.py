@@ -18,23 +18,22 @@ readme = ''
 if (HERE / 'README.md').exists():
     readme = (HERE / 'README.md').read_text(encoding='utf-8')
 
+def read_version():
+    import re
+    with open("peek/__init__.py", "r", encoding="utf-8") as f:
+        version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)
+    return version
+
 setup(
     name='brat-peek',
-    version='0.1.0',
+    version=read_version(), # peek/__init__.py contains the version
     description='Simple utilities to read/write brat standoff files (peek module)',
     long_description=readme,
     long_description_content_type='text/markdown',
     url='https://github.com/s-lilo/brat-peek',
     author='Salvador Lima López',
     license='MIT',
-    py_modules=[
-        'peek',
-        'ann_structure',
-        'rwsl',
-        'metrics',
-        'stats',
-        'txt',
-    ],
+    packages=['peek'],
     install_requires=read_reqs(),
     classifiers=[
         'Programming Language :: Python :: 3',

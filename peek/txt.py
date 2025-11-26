@@ -1,14 +1,12 @@
 """
 Read corpus text for different purposes.
 """
-import ann_structure
+from . import ann_structure
 
 import csv
 import re
 
-import peek
-
-import rwsl
+from . import rwsl
 
 
 # This will save us from writing lots of redundant code

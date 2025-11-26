@@ -1,7 +1,7 @@
 """
 Read, write, save, load.
 """
-import ann_structure
+from . import ann_structure
 
 import csv
 import json
@@ -11,7 +11,8 @@ import os
 
 # .ANN
 # TODO: Redundant import with ann_structure above, need to fix
-import peek
+# Commented to remove circular import
+# from . import peek
 
 import spacy
 

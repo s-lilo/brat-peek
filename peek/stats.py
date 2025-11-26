@@ -1,7 +1,7 @@
 '''
 Visualization and stats reporting.
 '''
-import ann_structure
+from . import ann_structure
 
 import csv
 import os
