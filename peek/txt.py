@@ -188,7 +188,6 @@ def generate_suggestion_re(doc, word_dict, flags=[]):
     """
     Look up a dict of words or expressions in a document to suggest new textbound annotations.
     The dict must have the text to look up as key and a tuple inside: class and comment (to be added to brat's comment field, e.g. for codification - can be empty)
-
     """
     new_doc = peek.AnnSentence()
     new_doc.name = doc.name

@@ -245,7 +245,9 @@ class AnnDocument:
         # Check type of annotation line
         if line.startswith('T'):  # TextBound: entities
             tag, span = fields[1].split()[0], fields[1].split()[1:]
-            if len(span) == 3:  # Discontinuous annotations
+            if len(span) > 3:
+                pass
+            elif len(span) == 3:  # Discontinuous annotations
                 span = " ".join(span).split(';')
                 span = [s.split(' ') for s in span]
                 span = ((int(span[0][0]), int(span[0][1])), (int(span[1][0]), int(span[1][1])))
