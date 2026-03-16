@@ -22,7 +22,7 @@ from .ann_structure import (
     Placeholder,
 )
 
-__version__ = "0.1.2"
+__version__ = "0.1.2.1"
 __all__ = [
     "AnnCorpus",
     "AnnDocument",
