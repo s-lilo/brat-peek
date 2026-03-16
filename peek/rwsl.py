@@ -14,8 +14,6 @@ import os
 # Commented to remove circular import
 # from . import peek
 
-import spacy
-
 from ast import literal_eval
 
 
@@ -99,7 +97,7 @@ def add_default_attribute(corpus, attribute_tuple, output_path):
     e.g. peek.rwsl.add_default_attribute(corpus, ('Assertion', 'Presente'), output_path)
     """
     for doc in corpus.docs:
-        new_doc = peek.AnnSentence()
+        new_doc = ann_structure.AnnSentence()
         new_doc.name = doc.name
 
         if doc.anns["attributes"]:
@@ -220,27 +218,27 @@ def from_corpus_tsv_to_ann(tsv_path, output_path):
         # Go through each document, create annotations and store the .ann files
 
         for file in files_in_tsv.keys():
-            new_doc = peek.AnnSentence()
+            new_doc = ann_structure.AnnSentence()
             new_doc.name = file
             t_id = 1
             a_id = 1
             n_id = 1
             # New columns are "tag", "span", "text", "note", "attributes"
             for ann in files_in_tsv[file]:
-                new_ent = peek.Entity(name='T{}'.format(t_id), tag=ann[0], span=literal_eval(ann[1]), text=ann[2])
+                new_ent = ann_structure.Entity(name='T{}'.format(t_id), tag=ann[0], span=literal_eval(ann[1]), text=ann[2])
                 new_doc.anns['entities'].append(new_ent)
                 if ann[3]:  # note
-                    new_note = peek.Note(name='#{}'.format(n_id), tag='AnnotatorNotes', ann_id='T{}'.format(t_id), note=ann[3])
+                    new_note = ann_structure.Note(name='#{}'.format(n_id), tag='AnnotatorNotes', ann_id='T{}'.format(t_id), note=ann[3])
                     new_doc.anns['notes'].append(new_note)
                     n_id += 1
                 if ann[4] and ann[4] != '[]':
                     att_line = ann[4].strip('[]').split(',')
                     for att in att_line:
-                        old_att = peek.AnnSentence._parse_line(att.lstrip(' '))
+                        old_att = ann_structure.AnnSentence._parse_line(att.lstrip(' '))
                         new_args = ['T{}'.format(t_id)]
                         if len(old_att.arguments) == 2:
                             new_args.append(old_att.arguments[1])
-                        new_att = peek.Attribute(name='A{}'.format(a_id), tag=old_att.tag, arguments=new_args)
+                        new_att = ann_structure.Attribute(name='A{}'.format(a_id), tag=old_att.tag, arguments=new_args)
                         new_doc.anns['attributes'].append(new_att)
                         a_id += 1
                 t_id += 1
@@ -460,4 +458,4 @@ def separate_tags(corpus, output_folder, include_empty=True):
             for ann in anns:
                 new_doc.copy_entity(ann)
                 new_doc.from_entity(ann)
-            peek.rwsl.write_ann_file(new_doc, output_folder + '/' + tag)
+            write_ann_file(new_doc, output_folder + '/' + tag)
